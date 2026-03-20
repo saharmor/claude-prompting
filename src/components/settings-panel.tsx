@@ -21,18 +21,31 @@ interface StoredSettings {
   saveConsent: boolean;
 }
 
+const emptyStoredSettings: StoredSettings = { key: "", saveConsent: false };
+let cachedStoredSettings: StoredSettings = emptyStoredSettings;
+
 function getStoredSettingsSnapshot(): StoredSettings {
   if (typeof window === "undefined") {
-    return { key: "", saveConsent: false };
+    return emptyStoredSettings;
   }
 
-  return {
+  const nextSnapshot = {
     key:
       localStorage.getItem(STORAGE_KEY) ??
       sessionStorage.getItem(STORAGE_KEY) ??
       "",
     saveConsent: localStorage.getItem(CONSENT_KEY) === "true",
   };
+
+  if (
+    cachedStoredSettings.key === nextSnapshot.key &&
+    cachedStoredSettings.saveConsent === nextSnapshot.saveConsent
+  ) {
+    return cachedStoredSettings;
+  }
+
+  cachedStoredSettings = nextSnapshot;
+  return cachedStoredSettings;
 }
 
 function subscribeToStoredSettings(callback: () => void) {
@@ -69,7 +82,7 @@ export function SettingsPanel() {
   const storedSettings = useSyncExternalStore(
     subscribeToStoredSettings,
     getStoredSettingsSnapshot,
-    () => ({ key: "", saveConsent: false })
+    () => emptyStoredSettings
   );
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<StoredSettings | null>(null);
