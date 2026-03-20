@@ -1,10 +1,23 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { chapters } from "@/lib/curriculum/data";
+import {
+  createMetadata,
+  siteDescription,
+  siteName,
+  siteTagline,
+} from "@/lib/site-metadata";
 
 const stats = {
   chapters: chapters.length,
   exercises: chapters.reduce((sum, ch) => sum + ch.exercises.length, 0),
 };
+
+export const metadata: Metadata = createMetadata({
+  title: `${siteName} | ${siteTagline}`,
+  description: siteDescription,
+  path: "/",
+});
 
 export default function Home() {
   return (

@@ -1,14 +1,26 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { chapters } from "@/lib/curriculum/data";
 import { Badge } from "@/components/ui/badge";
 import { ChapterProgress } from "@/components/chapter-progress";
 import { ShareCard } from "@/components/share-card";
+import {
+  createMetadata,
+  getCurriculumDescription,
+  siteName,
+} from "@/lib/site-metadata";
 
 const difficultyColor: Record<string, string> = {
   beginner: "bg-accent-green/15 text-accent-green border-accent-green/30",
   intermediate: "bg-accent-blue/15 text-accent-blue border-accent-blue/30",
   advanced: "bg-primary/15 text-primary border-primary/30",
 };
+
+export const metadata: Metadata = createMetadata({
+  title: `Curriculum | ${siteName}`,
+  description: getCurriculumDescription(),
+  path: "/learn",
+});
 
 export default function LearnPage() {
   const grouped = {

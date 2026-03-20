@@ -1,6 +1,12 @@
 import { ProgressData, ExerciseAttempt, CURRENT_VERSION } from "./types";
 
 const STORAGE_KEY = "promptcraft_progress";
+export const PROGRESS_CHANGE_EVENT = "promptcraft-progress-change";
+
+function notifyProgressChange() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(PROGRESS_CHANGE_EVENT));
+}
 
 function createEmpty(): ProgressData {
   return { __version: CURRENT_VERSION, attempts: {} };
@@ -32,6 +38,7 @@ export function saveAttempt(attempt: ExerciseAttempt): void {
   data.attempts[key] = attempt;
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  notifyProgressChange();
 }
 
 export function getAttempt(
@@ -78,4 +85,5 @@ export function isAllComplete(
 
 export function resetProgress(): void {
   localStorage.removeItem(STORAGE_KEY);
+  notifyProgressChange();
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,26 +14,71 @@ import { Button } from "@/components/ui/button";
 
 const STORAGE_KEY = "anthropic_api_key";
 const CONSENT_KEY = "anthropic_api_key_saved";
+const SETTINGS_CHANGE_EVENT = "promptclaude-settings-change";
+
+interface StoredSettings {
+  key: string;
+  saveConsent: boolean;
+}
+
+function getStoredSettingsSnapshot(): StoredSettings {
+  if (typeof window === "undefined") {
+    return { key: "", saveConsent: false };
+  }
+
+  return {
+    key:
+      localStorage.getItem(STORAGE_KEY) ??
+      sessionStorage.getItem(STORAGE_KEY) ??
+      "",
+    saveConsent: localStorage.getItem(CONSENT_KEY) === "true",
+  };
+}
+
+function subscribeToStoredSettings(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+
+  const handleChange = (event: Event) => {
+    if (
+      event instanceof StorageEvent &&
+      event.key !== null &&
+      event.key !== STORAGE_KEY &&
+      event.key !== CONSENT_KEY
+    ) {
+      return;
+    }
+
+    callback();
+  };
+
+  window.addEventListener("storage", handleChange);
+  window.addEventListener(SETTINGS_CHANGE_EVENT, handleChange);
+
+  return () => {
+    window.removeEventListener("storage", handleChange);
+    window.removeEventListener(SETTINGS_CHANGE_EVENT, handleChange);
+  };
+}
+
+function notifyStoredSettingsChange() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(SETTINGS_CHANGE_EVENT));
+}
 
 export function SettingsPanel() {
+  const storedSettings = useSyncExternalStore(
+    subscribeToStoredSettings,
+    getStoredSettingsSnapshot,
+    () => ({ key: "", saveConsent: false })
+  );
   const [open, setOpen] = useState(false);
-  const [key, setKey] = useState("");
-  const [saveConsent, setSaveConsent] = useState(false);
+  const [draft, setDraft] = useState<StoredSettings | null>(null);
   const [saved, setSaved] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    // Check both storages; localStorage wins if consent was given previously
-    const stored =
-      localStorage.getItem(STORAGE_KEY) ??
-      sessionStorage.getItem(STORAGE_KEY);
-    const consent = localStorage.getItem(CONSENT_KEY) === "true";
-    if (stored) {
-      setKey(stored);
-      setSaveConsent(consent);
-    }
-  }, []);
+  const key = draft?.key ?? storedSettings.key;
+  const saveConsent = draft?.saveConsent ?? storedSettings.saveConsent;
 
   function triggerSavedFeedback() {
     if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
@@ -59,16 +104,18 @@ export function SettingsPanel() {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(CONSENT_KEY);
     }
+    notifyStoredSettingsChange();
+    setDraft(null);
     triggerSavedFeedback();
     setOpen(false);
   }
 
   function handleClear() {
-    setKey("");
-    setSaveConsent(false);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(CONSENT_KEY);
     sessionStorage.removeItem(STORAGE_KEY);
+    notifyStoredSettingsChange();
+    setDraft(null);
     triggerSavedFeedback();
   }
 
@@ -109,7 +156,12 @@ export function SettingsPanel() {
               type="password"
               placeholder="sk-ant-..."
               value={key}
-              onChange={(e) => setKey(e.target.value)}
+              onChange={(e) =>
+                setDraft((current) => ({
+                  key: e.target.value,
+                  saveConsent: current?.saveConsent ?? storedSettings.saveConsent,
+                }))
+              }
               className="font-mono text-sm"
             />
             {!isValid && (
@@ -124,7 +176,12 @@ export function SettingsPanel() {
             <input
               type="checkbox"
               checked={saveConsent}
-              onChange={(e) => setSaveConsent(e.target.checked)}
+              onChange={(e) =>
+                setDraft((current) => ({
+                  key: current?.key ?? storedSettings.key,
+                  saveConsent: e.target.checked,
+                }))
+              }
               className="mt-0.5 accent-primary"
             />
             <span className="text-muted-foreground">

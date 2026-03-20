@@ -1,9 +1,11 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { chapters, getChapter } from "@/lib/curriculum/data";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { MarkdownContent } from "@/components/markdown-content";
+import { createMetadata, getChapterDescription, siteName } from "@/lib/site-metadata";
 
 interface Props {
   params: Promise<{ chapterSlug: string }>;
@@ -11,6 +13,25 @@ interface Props {
 
 export function generateStaticParams() {
   return chapters.map((c) => ({ chapterSlug: c.slug }));
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { chapterSlug } = await params;
+  const chapter = getChapter(chapterSlug);
+
+  if (!chapter) {
+    return createMetadata({
+      title: `Curriculum | ${siteName}`,
+      description: "Explore the Prompt Claude curriculum.",
+      path: "/learn",
+    });
+  }
+
+  return createMetadata({
+    title: `${chapter.title} | ${siteName}`,
+    description: getChapterDescription(chapter),
+    path: `/learn/${chapter.slug}`,
+  });
 }
 
 export default async function ChapterPage({ params }: Props) {

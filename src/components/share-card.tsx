@@ -1,27 +1,65 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
-import { isAllComplete } from "@/lib/progress/storage";
+import {
+  isAllComplete,
+  PROGRESS_CHANGE_EVENT,
+} from "@/lib/progress/storage";
 import { chapters } from "@/lib/curriculum/data";
+import { siteName } from "@/lib/site-metadata";
+
+const allChapters = chapters.map((chapter) => ({
+  slug: chapter.slug,
+  exerciseIds: chapter.exercises.map((exercise) => exercise.id),
+}));
+
+const totalExercises = chapters.reduce(
+  (sum, chapter) => sum + chapter.exercises.length,
+  0
+);
+
+const totalChapters = chapters.length;
+
+function subscribeToProgress(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+
+  const handleChange = (event: Event) => {
+    if (
+      event instanceof StorageEvent &&
+      event.key !== null &&
+      event.key !== "promptcraft_progress"
+    ) {
+      return;
+    }
+
+    callback();
+  };
+
+  window.addEventListener("storage", handleChange);
+  window.addEventListener(PROGRESS_CHANGE_EVENT, handleChange);
+
+  return () => {
+    window.removeEventListener("storage", handleChange);
+    window.removeEventListener(PROGRESS_CHANGE_EVENT, handleChange);
+  };
+}
+
+function getCompletionSnapshot() {
+  return isAllComplete(allChapters);
+}
 
 export function ShareCard() {
-  const [complete, setComplete] = useState(false);
+  const complete = useSyncExternalStore(
+    subscribeToProgress,
+    getCompletionSnapshot,
+    () => false
+  );
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    const allChapters = chapters.map((c) => ({
-      slug: c.slug,
-      exerciseIds: c.exercises.map((e) => e.id),
-    }));
-    setComplete(isAllComplete(allChapters));
-  }, []);
 
   if (!complete) return null;
 
-  const totalExercises = chapters.reduce((s, c) => s + c.exercises.length, 0);
-  const totalChapters = chapters.length;
-  const shareText = `I completed the PromptCraft course — all ${totalExercises} exercises across ${totalChapters} chapters of Claude prompt engineering! 🎯\n\nPractice your prompting skills too:`;
+  const shareText = `I completed the ${siteName} course — all ${totalExercises} exercises across ${totalChapters} chapters of Claude prompt engineering! 🎯\n\nPractice your prompting skills too:`;
 
   async function handleCopyText() {
     try {

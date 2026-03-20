@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Geist_Mono } from "next/font/google";
 import { NavBar } from "@/components/nav-bar";
+import {
+  siteAuthor,
+  siteDescription,
+  siteName,
+  siteUrl,
+} from "@/lib/site-metadata";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,9 +21,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PromptCraft - Master Claude Prompt Engineering",
-  description:
-    "Interactive exercises to sharpen your prompt engineering skills with Claude. Practice real techniques, get instant feedback, and level up your prompting.",
+  metadataBase: siteUrl,
+  applicationName: siteName,
+  title: siteName,
+  description: siteDescription,
+  authors: [{ name: siteAuthor, url: "https://saharmor.me" }],
+  creator: siteAuthor,
+  publisher: siteAuthor,
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: siteName,
+    description: siteDescription,
+    url: "/",
+    siteName,
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteName,
+    description: siteDescription,
+  },
 };
 
 export default function RootLayout({

@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { chapters, getExercise } from "@/lib/curriculum/data";
 import { Badge } from "@/components/ui/badge";
 import { ExerciseRunner } from "@/components/exercise-runner";
+import {
+  createMetadata,
+  getExerciseDescription,
+  siteName,
+} from "@/lib/site-metadata";
 
 interface Props {
   params: Promise<{ chapterSlug: string; exerciseId: string }>;
@@ -12,6 +18,25 @@ export function generateStaticParams() {
   return chapters.flatMap((c) =>
     c.exercises.map((e) => ({ chapterSlug: c.slug, exerciseId: e.id }))
   );
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { chapterSlug, exerciseId } = await params;
+  const result = getExercise(chapterSlug, exerciseId);
+
+  if (!result) {
+    return createMetadata({
+      title: `Curriculum | ${siteName}`,
+      description: "Explore the Prompt Claude curriculum.",
+      path: "/learn",
+    });
+  }
+
+  return createMetadata({
+    title: `${result.exercise.title} | ${siteName}`,
+    description: getExerciseDescription(result.chapter, result.exercise),
+    path: `/learn/${result.chapter.slug}/${result.exercise.id}`,
+  });
 }
 
 export default async function ExercisePage({ params }: Props) {
