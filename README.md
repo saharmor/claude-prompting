@@ -14,7 +14,7 @@ An interactive web app to sharpen your Claude prompt engineering skills — with
 
 <br/>
 
-<img src="public/preview.png" alt="Prompt Claude preview" style="border-radius: 12px;" />
+<img width="761" src="public/preview.png" alt="Prompt Claude preview" style="border-radius: 12px;" />
 
 </div>
 
