@@ -96,7 +96,8 @@ export function BrandShareImage() {
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
+          justifyContent: "flex-start",
+          gap: "48px",
           borderRadius: "40px",
           border: `2px solid ${colors.border}`,
           background: colors.card,
@@ -107,74 +108,49 @@ export function BrandShareImage() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "24px",
+            gap: "16px",
           }}
         >
-          <BrandMark size={132} />
+          <BrandMark size={72} />
           <div
             style={{
-              display: "flex",
-              flexDirection: "column",
+              fontSize: 24,
+              fontWeight: 600,
+              letterSpacing: 2,
+              textTransform: "uppercase",
+              color: colors.primary,
             }}
           >
-            <div
-              style={{
-                fontSize: 26,
-                fontWeight: 600,
-                letterSpacing: 2,
-                textTransform: "uppercase",
-                color: colors.primary,
-              }}
-            >
-              Prompt Claude
-            </div>
-            <div
-              style={{
-                fontSize: 58,
-                fontWeight: 700,
-                lineHeight: 1.05,
-                marginTop: 10,
-              }}
-            >
-              Master Claude Prompt Engineering
-            </div>
+            Prompt Claude
           </div>
         </div>
 
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-            gap: "24px",
+            flexDirection: "column",
+            gap: "20px",
           }}
         >
           <div
             style={{
-              display: "flex",
-              flexDirection: "column",
-              maxWidth: "74%",
+              fontSize: 52,
+              fontWeight: 700,
+              lineHeight: 1.05,
             }}
           >
-            <div
-              style={{
-                fontSize: 28,
-                lineHeight: 1.4,
-                color: colors.muted,
-              }}
-            >
-              Interactive exercises, instant feedback, and a practical curriculum
-              for getting better at prompting with Claude.
-            </div>
+            Master Claude Prompt Engineering
           </div>
           <div
             style={{
-              width: 18,
-              height: 18,
-              borderRadius: 999,
-              background: colors.accentBlue,
+              fontSize: 28,
+              lineHeight: 1.4,
+              color: colors.muted,
             }}
-          />
+          >
+            Interactive exercises, instant feedback, and a practical curriculum
+            for getting better at prompting with Claude.
+          </div>
         </div>
       </div>
     </div>

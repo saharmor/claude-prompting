@@ -45,7 +45,7 @@ export default async function ChapterPage({ params }: Props) {
     chapterIndex < chapters.length - 1 ? chapters[chapterIndex + 1] : null;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
+    <div className="mx-auto max-w-4xl px-4 py-12">
       {/* Breadcrumb */}
       <nav className="mb-6 text-sm text-muted-foreground">
         <Link href="/learn" className="hover:text-foreground transition-colors">

@@ -1,25 +1,18 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { Award } from "lucide-react";
 import {
   isAllComplete,
   PROGRESS_CHANGE_EVENT,
 } from "@/lib/progress/storage";
 import { chapters } from "@/lib/curriculum/data";
-import { siteName } from "@/lib/site-metadata";
+import { ShareButtons, totalExercises, totalChapters } from "@/components/share-buttons";
 
 const allChapters = chapters.map((chapter) => ({
   slug: chapter.slug,
   exerciseIds: chapter.exercises.map((exercise) => exercise.id),
 }));
-
-const totalExercises = chapters.reduce(
-  (sum, chapter) => sum + chapter.exercises.length,
-  0
-);
-
-const totalChapters = chapters.length;
 
 function subscribeToProgress(callback: () => void) {
   if (typeof window === "undefined") return () => {};
@@ -55,69 +48,40 @@ export function ShareCard() {
     getCompletionSnapshot,
     () => false
   );
-  const [copied, setCopied] = useState(false);
+  const confettiFiredRef = useRef(false);
+
+  useEffect(() => {
+    if (complete && !confettiFiredRef.current) {
+      confettiFiredRef.current = true;
+      import("canvas-confetti").then(({ default: confetti }) => {
+        confetti({
+          particleCount: 120,
+          spread: 90,
+          origin: { y: 0.4 },
+          colors: ["#E8694A", "#F5A623", "#7ED321", "#4A90E2", "#BD10E0"],
+        });
+      });
+    }
+  }, [complete]);
 
   if (!complete) return null;
 
-  const shareText = `I completed the ${siteName} course — all ${totalExercises} exercises across ${totalChapters} chapters of Claude prompt engineering! 🎯\n\nPractice your prompting skills too:`;
-
-  async function handleCopyText() {
-    try {
-      await navigator.clipboard.writeText(shareText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard API not available in this context
-    }
-  }
-
-  function handleShareTwitter() {
-    const url = encodeURIComponent(window.location.origin);
-    const text = encodeURIComponent(shareText);
-    window.open(
-      `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  }
-
-  function handleShareLinkedIn() {
-    const url = encodeURIComponent(window.location.origin);
-    window.open(
-      `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  }
-
   return (
-    <div className="mx-auto max-w-md my-8">
-      <div className="relative overflow-hidden rounded-xl border-2 border-primary/30 bg-card p-6 text-center">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent-blue/5" />
-        <div className="relative">
-          <div className="mb-3 text-4xl">&#127942;</div>
-          <h3 className="text-xl font-bold">Course Complete!</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            You finished all {totalExercises} exercises across {totalChapters}{" "}
-            chapters of Claude prompt engineering.
-          </p>
-
-          <div className="mt-4 flex flex-col gap-2">
-            <div className="flex gap-2 justify-center">
-              <Button onClick={handleShareTwitter} variant="outline" size="sm">
-                Share on X
-              </Button>
-              <Button onClick={handleShareLinkedIn} variant="outline" size="sm">
-                Share on LinkedIn
-              </Button>
-            </div>
-            <button
-              onClick={handleCopyText}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {copied ? "Copied!" : "Copy share text"}
-            </button>
+    <div className="my-8">
+      <div className="relative overflow-hidden rounded-2xl border-2 border-primary/40 bg-card shadow-lg">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent-blue/10 pointer-events-none" />
+        <div className="relative flex flex-col items-center gap-5 px-8 py-8 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+            <Award className="h-7 w-7 text-primary" strokeWidth={1.5} />
           </div>
+          <div>
+            <h3 className="text-2xl font-bold tracking-tight">Course Complete!</h3>
+            <p className="mt-1.5 text-muted-foreground">
+              You finished all <strong>{totalExercises} exercises</strong> across{" "}
+              <strong>{totalChapters} chapters</strong> of Claude prompt engineering.
+            </p>
+          </div>
+          <ShareButtons />
         </div>
       </div>
     </div>

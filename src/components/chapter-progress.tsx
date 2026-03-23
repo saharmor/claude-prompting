@@ -1,26 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getChapterProgress } from "@/lib/progress/storage";
+import { useSyncExternalStore } from "react";
+import {
+  getChapterProgress,
+  PROGRESS_CHANGE_EVENT,
+} from "@/lib/progress/storage";
 
 interface Props {
   chapterSlug: string;
   exerciseIds: string[];
 }
 
-export function ChapterProgress({ chapterSlug, exerciseIds }: Props) {
-  const [progress, setProgress] = useState<{
-    completed: number;
-    total: number;
-  } | null>(null);
+function serializeProgress(snapshot: {
+  completed: number;
+  total: number;
+  allPassed: boolean;
+}) {
+  return `${snapshot.completed}|${snapshot.total}|${snapshot.allPassed ? "1" : "0"}`;
+}
 
-  // Stringify the array so the effect only re-runs when the IDs actually change,
-  // not every time the parent re-renders with a new array reference.
-  const exerciseIdsKey = exerciseIds.join(",");
-  useEffect(() => {
-    setProgress(getChapterProgress(chapterSlug, exerciseIds));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chapterSlug, exerciseIdsKey]);
+export function ChapterProgress({ chapterSlug, exerciseIds }: Props) {
+  const progressSnapshot = useSyncExternalStore(
+    (callback) => {
+      if (typeof window === "undefined") return () => {};
+
+      const handleChange = (event: Event) => {
+        if (
+          event instanceof StorageEvent &&
+          event.key !== null &&
+          event.key !== "promptcraft_progress"
+        ) {
+          return;
+        }
+
+        callback();
+      };
+
+      window.addEventListener("storage", handleChange);
+      window.addEventListener(PROGRESS_CHANGE_EVENT, handleChange);
+
+      return () => {
+        window.removeEventListener("storage", handleChange);
+        window.removeEventListener(PROGRESS_CHANGE_EVENT, handleChange);
+      };
+    },
+    () => serializeProgress(getChapterProgress(chapterSlug, exerciseIds)),
+    () => serializeProgress(getChapterProgress(chapterSlug, exerciseIds))
+  );
+  const [completedRaw, totalRaw] = progressSnapshot.split("|");
+  const progress = {
+    completed: Number(completedRaw),
+    total: Number(totalRaw),
+  };
 
   if (!progress || progress.completed === 0) return null;
 

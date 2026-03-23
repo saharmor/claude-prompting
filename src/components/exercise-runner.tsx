@@ -1,12 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FeedbackPanel } from "@/components/feedback-panel";
 import { ModelAnswer } from "@/components/model-answer";
-import { saveAttempt, getAttempt } from "@/lib/progress/storage";
+import { saveAttempt, getAttempt, isAllComplete } from "@/lib/progress/storage";
+import { chapters } from "@/lib/curriculum/data";
 import type { Exercise, GradeResult } from "@/lib/curriculum/schema";
+import { OPEN_SETTINGS_EVENT } from "@/components/settings-panel";
+import { Award } from "lucide-react";
+import { ShareButtons, totalExercises, totalChapters } from "@/components/share-buttons";
+
+const allChaptersForCompletion = chapters.map((ch) => ({
+  slug: ch.slug,
+  exerciseIds: ch.exercises.map((e) => e.id),
+}));
 
 interface Props {
   exercise: Exercise;
@@ -20,13 +30,42 @@ export function ExerciseRunner({ exercise, chapterSlug }: Props) {
   const [showHints, setShowHints] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastAttemptPassed, setLastAttemptPassed] = useState<boolean | null>(null);
+  const [showCourseComplete, setShowCourseComplete] = useState(false);
+  const confettiFiredRef = useRef(false);
 
   useEffect(() => {
     const prev = getAttempt(chapterSlug, exercise.id);
     if (prev) {
       setLastAttemptPassed(prev.passed);
+    } else {
+      setLastAttemptPassed(null);
     }
   }, [chapterSlug, exercise.id]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("preview-complete")) {
+        setShowCourseComplete(true);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showCourseComplete && !confettiFiredRef.current) {
+      confettiFiredRef.current = true;
+      import("canvas-confetti").then(({ default: confetti }) => {
+        const duration = 3500;
+        const end = Date.now() + duration;
+        const frame = () => {
+          confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ["#E8694A", "#F5A623", "#7ED321", "#4A90E2"] });
+          confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ["#E8694A", "#F5A623", "#7ED321", "#4A90E2"] });
+          if (Date.now() < end) requestAnimationFrame(frame);
+        };
+        frame();
+      });
+    }
+  }, [showCourseComplete]);
 
   async function handleSubmit() {
     if (!prompt.trim()) return;
@@ -38,9 +77,7 @@ export function ExerciseRunner({ exercise, chapterSlug }: Props) {
     try {
       const apiKey = getApiKey();
       if (!apiKey) {
-        setError(
-          "Please set your Anthropic API key first. Click the gear icon in the top-right corner."
-        );
+        setError("no-api-key");
         setIsGrading(false);
         return;
       }
@@ -72,6 +109,10 @@ export function ExerciseRunner({ exercise, chapterSlug }: Props) {
         score: data.score,
         submittedAt: new Date().toISOString(),
       });
+
+      if (data.passed && isAllComplete(allChaptersForCompletion)) {
+        setShowCourseComplete(true);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -81,6 +122,42 @@ export function ExerciseRunner({ exercise, chapterSlug }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Course Complete Overlay */}
+      {showCourseComplete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border-2 border-primary/40 bg-card shadow-2xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent-blue/10 pointer-events-none" />
+            <div className="relative flex flex-col items-center gap-5 p-8 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                <Award className="h-8 w-8 text-primary" strokeWidth={1.5} />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold tracking-tight">Course Complete!</h2>
+                <p className="mt-2 text-muted-foreground">
+                  You finished all <strong>{totalExercises} exercises</strong> across <strong>{totalChapters} chapters</strong> of Claude prompt engineering.
+                </p>
+              </div>
+
+              <ShareButtons />
+
+              <button
+                onClick={() => setShowCourseComplete(false)}
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors text-xl leading-none"
+                aria-label="Close"
+              >
+                ×
+              </button>
+
+              <Link
+                href="/learn"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+              >
+                View full curriculum →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Previous attempt indicator */}
       {lastAttemptPassed !== null && !result && (
         <div
@@ -142,7 +219,20 @@ export function ExerciseRunner({ exercise, chapterSlug }: Props) {
       {/* Error */}
       {error && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-          {error}
+          {error === "no-api-key" ? (
+            <>
+              Please set your Anthropic API key first. Click the{" "}
+              <button
+                onClick={() => window.dispatchEvent(new Event(OPEN_SETTINGS_EVENT))}
+                className="underline font-medium hover:opacity-80 transition-opacity cursor-pointer"
+              >
+                gear icon
+              </button>
+              {" "}in the top-right corner.
+            </>
+          ) : (
+            error
+          )}
         </div>
       )}
 

@@ -56,7 +56,7 @@ export default async function ExercisePage({ params }: Props) {
       : null;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
+    <div className="mx-auto max-w-4xl px-4 py-12">
       {/* Breadcrumb */}
       <nav className="mb-6 text-sm text-muted-foreground">
         <Link href="/learn" className="hover:text-foreground transition-colors">
@@ -96,7 +96,11 @@ export default async function ExercisePage({ params }: Props) {
       </div>
 
       {/* Exercise Runner (client component) */}
-      <ExerciseRunner exercise={exercise} chapterSlug={chapter.slug} />
+      <ExerciseRunner
+        key={`${chapter.slug}/${exercise.id}`}
+        exercise={exercise}
+        chapterSlug={chapter.slug}
+      />
 
       {/* Exercise navigation */}
       <div className="mt-10 flex items-center justify-between text-sm">

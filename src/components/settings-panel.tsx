@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 const STORAGE_KEY = "anthropic_api_key";
 const CONSENT_KEY = "anthropic_api_key_saved";
 const SETTINGS_CHANGE_EVENT = "promptclaude-settings-change";
+export const OPEN_SETTINGS_EVENT = "promptclaude-open-settings";
 
 interface StoredSettings {
   key: string;
@@ -86,9 +87,16 @@ export function SettingsPanel() {
   );
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<StoredSettings | null>(null);
+
+  useEffect(() => {
+    const handleOpenSettings = () => setOpen(true);
+    window.addEventListener(OPEN_SETTINGS_EVENT, handleOpenSettings);
+    return () => window.removeEventListener(OPEN_SETTINGS_EVENT, handleOpenSettings);
+  }, []);
   const [saved, setSaved] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const guideId = "api-key-guide";
 
   const key = draft?.key ?? storedSettings.key;
   const saveConsent = draft?.saveConsent ?? storedSettings.saveConsent;
@@ -211,7 +219,7 @@ export function SettingsPanel() {
             <p className="text-xs text-muted-foreground bg-muted rounded px-3 py-2 border border-border">
               <strong>Heads up:</strong> Without &quot;Remember this key,&quot;
               your key will only be kept for this browser session. You&apos;ll
-              need to re-enter it after closing the tab or refreshing the page.
+              need to re-enter it after closing this tab or browser.
             </p>
           )}
 
@@ -231,6 +239,8 @@ export function SettingsPanel() {
           <div className="border-t border-border pt-3">
             <button
               onClick={() => setShowGuide(!showGuide)}
+              aria-expanded={showGuide}
+              aria-controls={guideId}
               className="flex w-full items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               <span
@@ -244,7 +254,10 @@ export function SettingsPanel() {
               How do I get an API key?
             </button>
             {showGuide && (
-              <ol className="mt-2 flex flex-col gap-2 text-sm text-muted-foreground pl-5 list-decimal">
+              <ol
+                id={guideId}
+                className="mt-2 flex flex-col gap-2 text-sm text-muted-foreground pl-5 list-decimal"
+              >
                 <li>
                   Go to{" "}
                   <a

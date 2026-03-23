@@ -7,6 +7,7 @@ import {
   siteName,
   siteTagline,
 } from "@/lib/site-metadata";
+import { SmartLearnLink } from "@/components/smart-learn-link";
 
 const stats = {
   chapters: chapters.length,
@@ -24,7 +25,7 @@ export default function Home() {
     <div className="flex flex-col items-center">
       {/* Hero */}
       <section className="w-full border-b border-border bg-card">
-        <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 px-4 py-20 text-center">
+        <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 px-4 py-20 text-center">
           <p className="text-sm font-medium tracking-wide text-primary uppercase">
             Interactive Prompt Engineering Course
           </p>
@@ -32,18 +33,21 @@ export default function Home() {
             Master Prompting with Claude
           </h1>
           <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
-            Practice real prompt engineering techniques through hands-on
-            exercises. Get instant AI-powered feedback and level up your skills
-            — whether you&apos;re preparing for a role at Anthropic or just want to
-            get more out of Claude.
+          Hands-on exercises with instant AI feedback, whether you&apos;re preparing for a role at Anthropic or just want to get more out of Claude.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Based on{" "}
+            <a
+              href="https://docs.google.com/spreadsheets/d/1jIxjzUWG-6xBVIa2ay6yDpLyeuOh_hR_ZB75a47KX_E/edit?gid=869808629#gid=869808629"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-foreground transition-colors"
+            >
+              Anthropic&apos;s prompt engineering tutorial
+            </a>
           </p>
           <div className="flex gap-3 pt-2">
-            <Link
-              href="/learn"
-              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80"
-            >
-              Start Learning
-            </Link>
+            <SmartLearnLink className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80" />
             <Link
               href="/learn#curriculum"
               className="inline-flex h-9 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted"
@@ -55,16 +59,14 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section className="mx-auto max-w-4xl px-4 py-16">
-        <h2 className="mb-10 text-center text-2xl font-semibold">
-          How It Works
-        </h2>
+      <section className="mx-auto w-full max-w-5xl px-4 py-16">
+        <h2 className="mb-10 text-center text-2xl font-semibold">How It Works</h2>
         <div className="grid gap-8 sm:grid-cols-3">
           {[
             {
               step: "1",
               title: "Learn the Concept",
-              body: "Each chapter starts with a focused lesson explaining one prompting technique — with examples from Claude's best practices.",
+              body: "Each chapter starts with a focused lesson explaining one prompting technique, with examples from Claude's best practices.",
             },
             {
               step: "2",
@@ -95,7 +97,7 @@ export default function Home() {
 
       {/* Stats */}
       <section className="w-full border-y border-border bg-muted/50">
-        <div className="mx-auto flex max-w-3xl items-center justify-center gap-12 px-4 py-10 text-center">
+        <div className="mx-auto flex max-w-4xl items-center justify-center gap-12 px-4 py-10 text-center">
           <div>
             <p className="text-3xl font-bold text-primary">{stats.chapters}</p>
             <p className="text-sm text-muted-foreground">Chapters</p>
@@ -112,18 +114,17 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="mx-auto max-w-3xl px-4 py-16 text-center">
+      <section className="mx-auto w-full max-w-4xl px-4 py-16 text-center">
         <h2 className="mb-4 text-2xl font-semibold">Ready to start?</h2>
         <p className="mb-6 text-muted-foreground">
-          All you need is an Anthropic API key. The course is free and
-          open — jump into any chapter at your own pace.
+          All you need is an Anthropic API key. The course is free and open-source. Jump into any chapter at your own pace.
         </p>
-        <Link
-          href="/learn"
+        <SmartLearnLink
           className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80"
-        >
-          Browse the Curriculum
-        </Link>
+          startLabel="Browse the Curriculum"
+          resumeLabel="Resume Learning"
+          startHref="/learn#curriculum"
+        />
       </section>
     </div>
   );
