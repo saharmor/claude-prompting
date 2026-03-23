@@ -1,3 +1,4 @@
+import { APIUserAbortError } from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { getExercise } from "@/lib/curriculum/data";
 import { gradeSubmission } from "@/lib/anthropic/grader";
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (err instanceof Error && err.name === "AbortError") {
+    if (err instanceof APIUserAbortError || (err instanceof Error && err.name === "AbortError")) {
       return NextResponse.json(
         { error: "The grading request timed out. Please try again." },
         { status: 504 }

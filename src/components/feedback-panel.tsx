@@ -32,6 +32,17 @@ export function FeedbackPanel({ result }: Props) {
         </span>
       </div>
 
+      {result.simulatedOutput && (
+        <div className="mb-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Simulated Claude Output
+          </p>
+          <pre className="overflow-x-auto whitespace-pre-wrap rounded-md border border-border/60 bg-background/70 p-3 text-sm leading-relaxed">
+            {result.simulatedOutput}
+          </pre>
+        </div>
+      )}
+
       {/* Feedback */}
       <p className="mb-4 text-sm leading-relaxed">{result.feedback}</p>
 

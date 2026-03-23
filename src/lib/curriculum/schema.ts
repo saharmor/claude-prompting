@@ -35,4 +35,5 @@ export interface GradeResult {
   feedback: string;
   strengths: string[];
   improvements: string[];
+  simulatedOutput?: string;
 }
