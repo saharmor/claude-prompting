@@ -129,7 +129,7 @@ Positive instructions ("Output only the name") work better than negative ones ("
         description:
           'Write a prompt that makes Claude produce a haiku that starts immediately with the poem — no "Here is a haiku" or "Sure!" preamble.',
         task: "Get Claude to write a haiku about the ocean that goes directly into the poem without any introductory text.",
-        evaluationType: "structural_check",
+        evaluationType: "behavioral_check",
         successCriteria:
           "Response must start directly with the haiku content — no preamble like 'Here is a haiku', 'Sure!', or any introductory text.",
         hints: [
