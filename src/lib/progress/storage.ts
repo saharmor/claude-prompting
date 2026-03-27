@@ -1,12 +1,12 @@
+import { createBrowserStore } from "@/lib/browser-storage";
 import { ProgressData, ExerciseAttempt, CURRENT_VERSION } from "./types";
 
-const STORAGE_KEY = "promptcraft_progress";
+export const PROGRESS_STORAGE_KEY = "promptcraft_progress";
 export const PROGRESS_CHANGE_EVENT = "promptcraft-progress-change";
-
-function notifyProgressChange() {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new Event(PROGRESS_CHANGE_EVENT));
-}
+const progressStore = createBrowserStore(
+  PROGRESS_STORAGE_KEY,
+  PROGRESS_CHANGE_EVENT
+);
 
 function getExerciseKey(chapterSlug: string, exerciseId: string): string {
   return `${chapterSlug}/${exerciseId}`;
@@ -25,26 +25,16 @@ function normalizeProgress(data: ProgressData): ProgressData {
 }
 
 function saveProgress(data: ProgressData): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  progressStore.write(data);
 }
 
 export function loadProgress(): ProgressData {
-  if (typeof window === "undefined") return createEmpty();
-
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return createEmpty();
-
-    const data = JSON.parse(raw) as ProgressData;
-
-    if (data.__version !== CURRENT_VERSION) {
-      return createEmpty();
-    }
-
-    return normalizeProgress(data);
-  } catch {
+  const data = progressStore.read<ProgressData | null>(null);
+  if (!data || data.__version !== CURRENT_VERSION) {
     return createEmpty();
   }
+
+  return normalizeProgress(data);
 }
 
 export function saveAttempt(attempt: ExerciseAttempt): void {
@@ -54,7 +44,6 @@ export function saveAttempt(attempt: ExerciseAttempt): void {
   data.attempts[key] = attempt;
 
   saveProgress(data);
-  notifyProgressChange();
 }
 
 export function getAttempt(
@@ -118,6 +107,9 @@ export function isAllComplete(
 }
 
 export function resetProgress(): void {
-  localStorage.removeItem(STORAGE_KEY);
-  notifyProgressChange();
+  progressStore.remove();
+}
+
+export function subscribeToProgressStorage(callback: () => void) {
+  return progressStore.subscribe(callback);
 }

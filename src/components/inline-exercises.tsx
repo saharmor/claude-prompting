@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { ExerciseRunner } from "@/components/exercise-runner";
 import { Button } from "@/components/ui/button";
 import {
   getAttempt,
-  PROGRESS_CHANGE_EVENT,
+  subscribeToProgressStorage,
 } from "@/lib/progress/storage";
 import type { Exercise } from "@/lib/curriculum/schema";
 
@@ -24,35 +24,45 @@ export function InlineExercises({
   nextChapterSlug,
   nextChapterTitle,
 }: Props) {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const [passedIds, setPassedIds] = useState<Set<string>>(new Set());
+  const scopeKey = useMemo(
+    () => `${chapterSlug}:${exercises.map((exercise) => exercise.id).join("|")}`,
+    [chapterSlug, exercises]
+  );
   const exerciseRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const refreshProgress = useCallback(() => {
-    const passed = new Set<string>();
+  const getPassedIds = useCallback(() => {
+    const passed: string[] = [];
     for (const ex of exercises) {
       const attempt = getAttempt(chapterSlug, ex.id);
-      if (attempt?.passed) passed.add(ex.id);
+      if (attempt?.passed) passed.push(ex.id);
     }
-    setPassedIds(passed);
+
     return passed;
   }, [exercises, chapterSlug]);
 
-  useEffect(() => {
-    const passed = refreshProgress();
-    const firstIncomplete = exercises.findIndex((ex) => !passed.has(ex.id));
-    setOpenIndex(firstIncomplete === -1 ? null : firstIncomplete);
-  }, [exercises, chapterSlug, refreshProgress]);
+  const passedIdList = useSyncExternalStore(
+    useCallback((callback) => subscribeToProgressStorage(callback), []),
+    getPassedIds,
+    () => []
+  );
+  const passedIds = useMemo(() => new Set(passedIdList), [passedIdList]);
+  const autoOpenIndex = useMemo(() => {
+    const firstIncomplete = exercises.findIndex((ex) => !passedIds.has(ex.id));
+    return firstIncomplete === -1 ? null : firstIncomplete;
+  }, [exercises, passedIds]);
+  const [openOverride, setOpenOverride] = useState<{
+    scopeKey: string;
+    value: number | null;
+  } | null>(null);
+  const openIndex =
+    openOverride?.scopeKey === scopeKey ? openOverride.value : autoOpenIndex;
 
-  useEffect(() => {
-    const handle = () => refreshProgress();
-    window.addEventListener(PROGRESS_CHANGE_EVENT, handle);
-    window.addEventListener("storage", handle);
-    return () => {
-      window.removeEventListener(PROGRESS_CHANGE_EVENT, handle);
-      window.removeEventListener("storage", handle);
-    };
-  }, [refreshProgress]);
+  const setOpenIndex = useCallback(
+    (value: number | null) => {
+      setOpenOverride({ scopeKey, value });
+    },
+    [scopeKey]
+  );
 
   const openExercise = useCallback((index: number) => {
     setOpenIndex(index);
@@ -61,7 +71,7 @@ export function InlineExercises({
 
     const y = el.getBoundingClientRect().top + window.scrollY - 80;
     window.scrollTo({ top: y, behavior: "smooth" });
-  }, []);
+  }, [setOpenIndex]);
 
   const completedCount = passedIds.size;
   const total = exercises.length;

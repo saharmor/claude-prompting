@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import {
   getChapterProgress,
-  PROGRESS_CHANGE_EVENT,
+  subscribeToProgressStorage,
 } from "@/lib/progress/storage";
 
 interface Props {
@@ -21,29 +21,7 @@ function serializeProgress(snapshot: {
 
 export function ChapterProgress({ chapterSlug, exerciseIds }: Props) {
   const progressSnapshot = useSyncExternalStore(
-    (callback) => {
-      if (typeof window === "undefined") return () => {};
-
-      const handleChange = (event: Event) => {
-        if (
-          event instanceof StorageEvent &&
-          event.key !== null &&
-          event.key !== "promptcraft_progress"
-        ) {
-          return;
-        }
-
-        callback();
-      };
-
-      window.addEventListener("storage", handleChange);
-      window.addEventListener(PROGRESS_CHANGE_EVENT, handleChange);
-
-      return () => {
-        window.removeEventListener("storage", handleChange);
-        window.removeEventListener(PROGRESS_CHANGE_EVENT, handleChange);
-      };
-    },
+    subscribeToProgressStorage,
     () => serializeProgress(getChapterProgress(chapterSlug, exerciseIds)),
     () => serializeProgress(getChapterProgress(chapterSlug, exerciseIds))
   );

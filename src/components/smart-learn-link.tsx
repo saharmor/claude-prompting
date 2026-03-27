@@ -4,7 +4,10 @@ import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { chapters } from "@/lib/curriculum/data";
 import { trackEvent } from "@/lib/analytics";
-import { loadProgress, PROGRESS_CHANGE_EVENT } from "@/lib/progress/storage";
+import {
+  loadProgress,
+  subscribeToProgressStorage,
+} from "@/lib/progress/storage";
 
 const orderedChapters = [
   ...chapters.filter((c) => c.difficulty === "beginner"),
@@ -13,27 +16,7 @@ const orderedChapters = [
 ];
 
 function subscribeToProgress(callback: () => void) {
-  if (typeof window === "undefined") return () => {};
-
-  const handleChange = (event: Event) => {
-    if (
-      event instanceof StorageEvent &&
-      event.key !== null &&
-      event.key !== "promptcraft_progress"
-    ) {
-      return;
-    }
-
-    callback();
-  };
-
-  window.addEventListener("storage", handleChange);
-  window.addEventListener(PROGRESS_CHANGE_EVENT, handleChange);
-
-  return () => {
-    window.removeEventListener("storage", handleChange);
-    window.removeEventListener(PROGRESS_CHANGE_EVENT, handleChange);
-  };
+  return subscribeToProgressStorage(callback);
 }
 
 function resolveLearnHref(

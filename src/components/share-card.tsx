@@ -4,7 +4,7 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 import { Award } from "lucide-react";
 import {
   isAllComplete,
-  PROGRESS_CHANGE_EVENT,
+  subscribeToProgressStorage,
 } from "@/lib/progress/storage";
 import { chapters } from "@/lib/curriculum/data";
 import { ShareButtons, totalExercises, totalChapters } from "@/components/share-buttons";
@@ -15,27 +15,7 @@ const allChapters = chapters.map((chapter) => ({
 }));
 
 function subscribeToProgress(callback: () => void) {
-  if (typeof window === "undefined") return () => {};
-
-  const handleChange = (event: Event) => {
-    if (
-      event instanceof StorageEvent &&
-      event.key !== null &&
-      event.key !== "promptcraft_progress"
-    ) {
-      return;
-    }
-
-    callback();
-  };
-
-  window.addEventListener("storage", handleChange);
-  window.addEventListener(PROGRESS_CHANGE_EVENT, handleChange);
-
-  return () => {
-    window.removeEventListener("storage", handleChange);
-    window.removeEventListener(PROGRESS_CHANGE_EVENT, handleChange);
-  };
+  return subscribeToProgressStorage(callback);
 }
 
 function getCompletionSnapshot() {
