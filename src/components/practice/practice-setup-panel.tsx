@@ -33,6 +33,14 @@ export function PracticeSetupPanel({
               <h1 className="text-3xl font-semibold tracking-tight text-foreground">
                 {currentProblem.title}
               </h1>
+              {currentProblem.is_sample ? (
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                >
+                  Sample
+                </Badge>
+              ) : null}
               <Badge variant="outline" className="capitalize">
                 {currentProblem.difficulty}
               </Badge>
@@ -76,7 +84,7 @@ export function PracticeSetupPanel({
                 Focus areas
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {currentProblem.tags.map((tag) => (
+                {currentProblem.tags.filter((tag) => tag !== "sample").map((tag) => (
                   <Badge key={tag} variant="secondary">
                     {tag}
                   </Badge>

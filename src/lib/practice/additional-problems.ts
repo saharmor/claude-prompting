@@ -1,5 +1,473 @@
 import { DEFAULT_INPUT_WRAPPER_TEMPLATE } from "@/lib/practice/types";
 
+export const sampleProblemRecords = [
+  {
+    id: "sample-beginner-01",
+    title: "Summarize a Product Review",
+    difficulty: "beginner",
+    description:
+      "Sample exercise — prompt included. Write a prompt that takes a customer product review and produces a structured XML summary with sentiment analysis and key takeaways. Press Run Prompt to see how it works, then try tweaking the prompt or attempt a blank exercise.",
+    input_format:
+      "The input is a customer product review that may include praise, complaints, and specific feature mentions.",
+    evaluator_expectation:
+      "Return XML with a short <summary>, a <sentiment> tag (positive, negative, or mixed), and a <key_points> block listing the main takeaways.",
+    starter_prompt: `You are a product review analyst. Read the customer review provided below and produce a structured analysis in XML format.
+
+Your output must contain exactly these XML tags:
+- <summary>: A 1-2 sentence overview of the review.
+- <sentiment>: One of "positive", "negative", or "mixed".
+- <key_points>: A list of <point> tags, each containing one specific takeaway from the review.
+
+Rules:
+- Base your analysis only on what the reviewer actually wrote.
+- Include at least 2 key points.
+- Keep the summary concise but capture the reviewer's main feeling.
+
+\${{REVIEW}}`,
+    input_wrapper_template: DEFAULT_INPUT_WRAPPER_TEMPLATE,
+    input_variable_name: "REVIEW",
+    sample_cases: [
+      {
+        id: "visible-1",
+        name: "Wireless headphones review",
+        input_data: `I bought the SoundWave Pro 3 headphones last month and overall I'm really impressed. The noise cancellation is top-notch — I can't hear my coworkers at all, which is exactly what I needed. Battery life is solid at around 30 hours, and the carrying case is surprisingly nice. My only complaint is that the ear cushions get warm after about two hours of continuous use, which can be uncomfortable during long meetings. Also, the companion app is clunky and crashes occasionally on Android. But for the sound quality and noise cancellation alone, these are worth every penny of the $299 price tag.`,
+        expected_output: `<summary>
+The reviewer is highly satisfied with the SoundWave Pro 3 headphones, praising noise cancellation and battery life, with minor complaints about ear cushion heat and a buggy companion app.
+</summary>
+<sentiment>positive</sentiment>
+<key_points>
+  <point>Excellent noise cancellation that fully blocks office noise.</point>
+  <point>Strong battery life of approximately 30 hours.</point>
+  <point>Ear cushions become uncomfortably warm after two hours.</point>
+  <point>Companion Android app is clunky and crashes occasionally.</point>
+  <point>Considered worth the $299 price for sound quality and ANC.</point>
+</key_points>`,
+        notes: "Straightforward positive review with minor negatives.",
+      },
+      {
+        id: "visible-2",
+        name: "Disappointing smart thermostat",
+        input_data: `Returned the ClimaSmart Hub after just one week. Setup was a nightmare — the Wi-Fi connection dropped four times during initial configuration, and the app kept showing "device not found" errors. When it finally connected, the temperature readings were consistently 3-4 degrees off from my old mercury thermometer. The scheduling feature worked okay, but what's the point if the temperature is wrong? Customer support was polite but unhelpful — they told me to "wait for a firmware update." For $189, I expected something that works out of the box. Going back to my old programmable thermostat.`,
+        expected_output: `<summary>
+The reviewer returned the ClimaSmart Hub after one week due to unreliable Wi-Fi setup, inaccurate temperature readings, and unhelpful customer support.
+</summary>
+<sentiment>negative</sentiment>
+<key_points>
+  <point>Wi-Fi connection dropped repeatedly during setup.</point>
+  <point>Temperature readings were 3-4 degrees inaccurate.</point>
+  <point>Customer support offered no real solution beyond waiting for a firmware update.</point>
+  <point>Scheduling feature worked but was undermined by sensor inaccuracy.</point>
+  <point>Returned the product and reverted to an older thermostat.</point>
+</key_points>`,
+        notes: "Negative review with multiple issues.",
+      },
+    ],
+    hidden_cases: [
+      {
+        id: "hidden-1",
+        name: "Mixed review of a standing desk",
+        input_data: `The ErgoRise Pro desk has some great features and some frustrating quirks. The electric motor is whisper-quiet and the height memory presets are genuinely useful — I switch between sitting and standing about four times a day and it remembers my exact heights. Build quality feels premium, and the bamboo top looks great in my home office. However, the desk wobbles noticeably at standing height (about 44 inches for me), especially when typing. The cable management tray is too small to fit a power strip, which seems like an oversight for a $650 desk. I'm keeping it because the good parts are really good, but I wish they'd addressed the stability issue.`,
+        expected_output: "",
+        notes: "Tests handling of genuinely mixed sentiment.",
+        hidden: true,
+      },
+    ],
+    validators: [
+      {
+        kind: "xml_required_tags",
+        label: "Has <summary>, <sentiment>, and <key_points> tags",
+        config: {
+          required_tags: ["summary", "sentiment", "key_points"],
+        },
+      },
+      {
+        kind: "regex",
+        label: "Sentiment is a valid value",
+        config: {
+          pattern: "<sentiment>\\s*(positive|negative|mixed)\\s*</sentiment>",
+          multiline: true,
+          failure_message:
+            "The <sentiment> tag must contain exactly one of: positive, negative, or mixed.",
+        },
+      },
+      {
+        kind: "regex",
+        label: "Key points contain substance",
+        config: {
+          pattern: "<point>[\\s\\S]{10,}</point>",
+          multiline: true,
+          failure_message: "Each <point> should contain a meaningful takeaway from the review.",
+        },
+      },
+    ],
+    evaluator_hook: "",
+    tags: ["summarization", "xml", "sample"],
+    created_by_user: false,
+    is_sample: true,
+  },
+  {
+    id: "sample-intermediate-01",
+    title: "Compare Two Options With Trade-offs",
+    difficulty: "intermediate",
+    description:
+      "Sample exercise — prompt included. Write a prompt that analyzes two options, lists pros and cons for each, and produces a justified recommendation based on the user's stated priorities. Press Run Prompt to see how it works, then try tweaking the prompt or attempt a blank exercise.",
+    input_format:
+      "The input describes two options (products, plans, or approaches) with their features, pricing, and context about the user's needs.",
+    evaluator_expectation:
+      "Return XML with an <analysis> root containing <option_a> and <option_b> blocks (each with <pros> and <cons>), and a <recommendation> with a justified choice.",
+    starter_prompt: `You are a decision-analysis assistant. The user is choosing between two options. Read the comparison input below and produce a structured trade-off analysis in XML.
+
+Your output must follow this structure:
+<analysis>
+  <option_a name="...">
+    <pros>
+      <item>...</item>
+    </pros>
+    <cons>
+      <item>...</item>
+    </cons>
+  </option_a>
+  <option_b name="...">
+    <pros>
+      <item>...</item>
+    </pros>
+    <cons>
+      <item>...</item>
+    </cons>
+  </option_b>
+  <recommendation>
+    <choice>Option A or Option B name</choice>
+    <reasoning>Why this option is better given the user's stated needs and constraints.</reasoning>
+  </recommendation>
+</analysis>
+
+Rules:
+- List at least 2 pros and 2 cons for each option.
+- The recommendation must reference specific user needs from the input.
+- Be honest about trade-offs — don't oversell the recommended option.
+- Keep each item concise (one sentence).
+
+\${{OPTIONS}}`,
+    input_wrapper_template: DEFAULT_INPUT_WRAPPER_TEMPLATE,
+    input_variable_name: "OPTIONS",
+    sample_cases: [
+      {
+        id: "visible-1",
+        name: "Cloud hosting plans for a startup",
+        input_data: `We're a 4-person startup launching our first SaaS product next month. We need to pick a cloud hosting plan. Here are our two finalists:
+
+Option A: CloudScale Starter ($49/month)
+- 2 shared vCPUs, 4 GB RAM, 80 GB SSD
+- Managed PostgreSQL included
+- Auto-scaling up to 4 instances
+- 1 TB bandwidth
+- Email support only (24-48h response)
+- Free SSL and CDN
+
+Option B: InfraPlus Growth ($129/month)
+- 4 dedicated vCPUs, 8 GB RAM, 160 GB NVMe
+- Self-managed database (they provide the VM)
+- Manual scaling, up to 8 instances
+- Unlimited bandwidth
+- 24/7 live chat and phone support
+- Free SSL, no CDN included
+
+Our priorities: we want to keep costs low during launch, we don't have a dedicated DevOps person, and we expect modest traffic (under 10k users) for the first 3 months. Uptime is important since we're selling to small businesses.`,
+        expected_output: `<analysis>
+  <option_a name="CloudScale Starter">
+    <pros>
+      <item>Significantly cheaper at $49/month, preserving runway during launch.</item>
+      <item>Managed PostgreSQL removes database ops burden from a team without dedicated DevOps.</item>
+      <item>Auto-scaling handles traffic spikes without manual intervention.</item>
+      <item>Included CDN improves performance for geographically distributed users.</item>
+    </pros>
+    <cons>
+      <item>Shared vCPUs may cause inconsistent performance under load.</item>
+      <item>Email-only support with 24-48h response could be problematic for uptime-critical incidents.</item>
+      <item>1 TB bandwidth cap could become a constraint if growth exceeds projections.</item>
+    </cons>
+  </option_a>
+  <option_b name="InfraPlus Growth">
+    <pros>
+      <item>Dedicated vCPUs provide consistent, predictable performance.</item>
+      <item>24/7 live support is valuable when uptime is a priority for business customers.</item>
+      <item>Unlimited bandwidth eliminates overage concerns as the product grows.</item>
+      <item>Higher resource ceiling (8 instances) offers more scaling headroom.</item>
+    </pros>
+    <cons>
+      <item>Nearly 3x the cost, which strains a 4-person startup's budget during pre-revenue launch.</item>
+      <item>Self-managed database requires DevOps expertise the team currently lacks.</item>
+      <item>Manual scaling adds operational overhead and risk of downtime during traffic spikes.</item>
+      <item>No included CDN means additional cost or configuration for global performance.</item>
+    </cons>
+  </option_b>
+  <recommendation>
+    <choice>CloudScale Starter</choice>
+    <reasoning>Given the team's lack of dedicated DevOps, modest expected traffic under 10k users, and need to preserve cash during launch, CloudScale Starter is the better fit. The managed database and auto-scaling directly address the team's operational constraints. The support gap is a real trade-off, but the cost savings ($80/month) and reduced ops burden outweigh it at this stage. The team can revisit InfraPlus Growth once traffic and revenue justify the upgrade.</reasoning>
+  </recommendation>
+</analysis>`,
+        notes: "Tests balanced comparison with clear user priorities.",
+      },
+    ],
+    hidden_cases: [
+      {
+        id: "hidden-1",
+        name: "Project management tools for a remote team",
+        input_data: `Our 12-person remote team needs a project management tool. We've narrowed it down to two:
+
+Option A: TaskFlow Teams ($8/user/month)
+- Kanban boards and list views
+- Built-in time tracking
+- 10 GB file storage
+- Slack and GitHub integrations
+- No Gantt charts
+- Mobile app available
+
+Option B: PlanGrid Pro ($15/user/month)
+- Gantt charts, Kanban, calendar, and list views
+- No built-in time tracking (integrates with Toggl)
+- 100 GB file storage
+- Slack, GitHub, Figma, and Jira integrations
+- Advanced reporting and dashboards
+- Mobile app available
+
+Our priorities: we manage complex multi-week projects with dependencies, we heavily use Figma for design handoffs, and we want to stay under $2,000/year total. We already pay for Toggl.`,
+        expected_output: "",
+        notes: "Tests whether recommendation correctly weighs budget constraint against feature needs.",
+        hidden: true,
+      },
+    ],
+    validators: [
+      {
+        kind: "xml_required_tags",
+        label: "Has required XML structure",
+        config: {
+          required_tags: ["analysis", "option_a", "option_b", "pros", "cons", "recommendation", "choice", "reasoning"],
+        },
+      },
+      {
+        kind: "regex",
+        label: "Each option has multiple pros",
+        config: {
+          pattern: "<pros>[\\s\\S]*<item>[\\s\\S]*</item>[\\s\\S]*<item>[\\s\\S]*</item>[\\s\\S]*</pros>",
+          multiline: true,
+          failure_message: "Each option should list at least 2 pros.",
+        },
+      },
+      {
+        kind: "regex",
+        label: "Each option has multiple cons",
+        config: {
+          pattern: "<cons>[\\s\\S]*<item>[\\s\\S]*</item>[\\s\\S]*<item>[\\s\\S]*</item>[\\s\\S]*</cons>",
+          multiline: true,
+          failure_message: "Each option should list at least 2 cons.",
+        },
+      },
+      {
+        kind: "regex",
+        label: "Recommendation includes reasoning",
+        config: {
+          pattern: "<reasoning>[\\s\\S]{50,}</reasoning>",
+          multiline: true,
+          failure_message: "The recommendation needs substantive reasoning (not just a one-liner).",
+        },
+      },
+    ],
+    evaluator_hook: "",
+    tags: ["analysis", "reasoning", "sample"],
+    created_by_user: false,
+    is_sample: true,
+  },
+  {
+    id: "sample-advanced-01",
+    title: "Multi-Step Research Plan",
+    difficulty: "advanced",
+    description:
+      "Sample exercise — prompt included. Write a prompt that turns a research question with constraints into a detailed plan with numbered steps, concrete methodologies, a phased timeline, and risk mitigations. Press Run Prompt to see how it works, then try tweaking the prompt or attempt a blank exercise.",
+    input_format:
+      "The input contains a research question, constraints (budget, timeline, team size), and any specific requirements or focus areas.",
+    evaluator_expectation:
+      "Return XML with a <research_plan> root containing a <goal>, numbered <steps> (each with a <description>, <methodology>, and <deliverable>), a <timeline>, and a <risks> section.",
+    starter_prompt: `You are a research planning consultant. Given a research question and a set of constraints, produce a detailed, actionable research plan in XML format.
+
+Your output must follow this structure:
+<research_plan>
+  <goal>One-sentence restatement of the core research objective.</goal>
+  <steps>
+    <step number="1">
+      <title>Short step name</title>
+      <description>What this step involves and why it matters.</description>
+      <methodology>The specific approach, tools, or techniques to use.</methodology>
+      <deliverable>The concrete output of this step.</deliverable>
+    </step>
+    <!-- At least 4 steps -->
+  </steps>
+  <timeline>
+    <phase step_range="1-2">Description and duration for this phase.</phase>
+    <!-- Group steps into phases that fit the stated time constraint -->
+  </timeline>
+  <risks>
+    <risk>
+      <description>What could go wrong.</description>
+      <mitigation>How to reduce or handle it.</mitigation>
+    </risk>
+    <!-- At least 2 risks -->
+  </risks>
+</research_plan>
+
+Rules:
+- Each step must be specific enough that a team member could start working on it immediately.
+- Methodology should name concrete techniques (e.g., "semi-structured interviews", "regression analysis"), not vague hand-waves.
+- The timeline must respect the constraints given in the input.
+- Risks should be realistic and specific to this research, not generic project risks.
+- Steps should build on each other logically — later steps should depend on earlier deliverables.
+
+\${{RESEARCH_BRIEF}}`,
+    input_wrapper_template: DEFAULT_INPUT_WRAPPER_TEMPLATE,
+    input_variable_name: "RESEARCH_BRIEF",
+    sample_cases: [
+      {
+        id: "visible-1",
+        name: "Customer churn analysis for a subscription business",
+        input_data: `Research question: Why are customers canceling their subscriptions within the first 90 days, and what interventions could reduce early churn by at least 20%?
+
+Constraints:
+- Timeline: 6 weeks
+- Team: 1 data analyst, 1 UX researcher, 1 product manager
+- Budget: $5,000 for external tools or incentives
+- We have access to our product analytics (Mixpanel), billing data (Stripe), and support tickets (Zendesk)
+- We can recruit up to 15 churned customers for interviews
+
+Focus areas: We suspect onboarding friction and unclear value proposition are the main drivers, but we want data to confirm or disprove this. The CEO wants actionable recommendations, not just a report.`,
+        expected_output: `<research_plan>
+  <goal>Identify the primary drivers of subscription cancellation within the first 90 days and design interventions projected to reduce early churn by at least 20%.</goal>
+  <steps>
+    <step number="1">
+      <title>Quantitative churn segmentation</title>
+      <description>Analyze existing billing and product data to segment churned users by behavior patterns, plan type, acquisition channel, and engagement levels during the first 90 days.</description>
+      <methodology>Export Stripe cancellation data and join with Mixpanel event logs. Run cohort analysis by signup week, then cluster users by feature adoption milestones (e.g., completed onboarding, used core feature 3+ times, invited a teammate). Use survival analysis to identify the highest-risk drop-off windows.</methodology>
+      <deliverable>Churn segmentation report identifying 3-5 distinct behavioral segments with their relative churn rates and drop-off timing.</deliverable>
+    </step>
+    <step number="2">
+      <title>Support ticket analysis</title>
+      <description>Mine Zendesk tickets from churned customers to surface recurring complaints, confusion points, and unmet expectations that quantitative data alone may miss.</description>
+      <methodology>Pull all tickets from users who canceled within 90 days in the last 6 months. Apply thematic coding (open coding pass, then axial coding) to categorize issues. Cross-reference categories with the behavioral segments from Step 1.</methodology>
+      <deliverable>Categorized issue matrix mapping complaint themes to user segments, with frequency counts and representative quotes.</deliverable>
+    </step>
+    <step number="3">
+      <title>Qualitative interviews with churned customers</title>
+      <description>Conduct in-depth interviews with recently churned users to understand their decision-making process, unmet expectations, and the specific moments that pushed them toward cancellation.</description>
+      <methodology>Recruit 12-15 churned customers across the top segments identified in Step 1, offering $50 gift cards from the research budget. Use semi-structured interview protocol with questions anchored to their actual usage timeline from Mixpanel. Record and transcribe using Otter.ai.</methodology>
+      <deliverable>Interview synthesis document with key themes, journey pain points, and direct quotes organized by segment.</deliverable>
+    </step>
+    <step number="4">
+      <title>Onboarding funnel deep-dive</title>
+      <description>Since onboarding friction is a suspected driver, specifically map the onboarding flow and identify where churned vs. retained users diverge in behavior.</description>
+      <methodology>Build a Mixpanel funnel from signup through the first five key activation milestones. Compare conversion rates between churned and retained cohorts at each step. Identify the steps with the largest retention gap.</methodology>
+      <deliverable>Annotated onboarding funnel comparison showing exact drop-off points and the retention lift associated with completing each milestone.</deliverable>
+    </step>
+    <step number="5">
+      <title>Intervention design and prioritization</title>
+      <description>Synthesize all findings into specific, actionable interventions prioritized by expected impact and implementation effort.</description>
+      <methodology>Workshop with the PM and UX researcher to map findings to intervention ideas. Score each using an impact-effort matrix, where impact is estimated from the segment size and churn rate data. Define success metrics and minimum experiment duration for each.</methodology>
+      <deliverable>Prioritized intervention roadmap with 3-5 recommended changes, each including the target segment, expected churn reduction, implementation requirements, and measurement plan.</deliverable>
+    </step>
+  </steps>
+  <timeline>
+    <phase step_range="1-2">Weeks 1-2: Data analysis phase. The analyst runs churn segmentation while the UX researcher codes support tickets. Both can proceed in parallel.</phase>
+    <phase step_range="3">Weeks 3-4: Qualitative research. Recruit and interview 12-15 churned customers. Allow one week for recruitment and scheduling, one week for interviews and synthesis.</phase>
+    <phase step_range="4">Week 5: Onboarding deep-dive. The analyst builds the funnel comparison using segments refined by interview insights.</phase>
+    <phase step_range="5">Week 6: Synthesis and recommendations. Cross-functional workshop to design interventions and produce the final roadmap.</phase>
+  </timeline>
+  <risks>
+    <risk>
+      <description>Churned customer recruitment may fall short of the 12-15 target, as canceled users have low motivation to participate.</description>
+      <mitigation>Start recruitment in Week 1 alongside quantitative work. Offer $50 incentives and send personalized outreach from the founder. Have a backup plan to supplement with 5-minute survey responses if fewer than 10 agree to full interviews.</mitigation>
+    </risk>
+    <risk>
+      <description>Mixpanel event tracking may have gaps in the onboarding flow, making it hard to pinpoint exact drop-off steps.</description>
+      <mitigation>Audit the tracking plan in Week 1 before running the analysis. If critical events are missing, instrument them immediately — they won't help with historical data but the team can note the gap in the report and plan a follow-up analysis in 4 weeks.</mitigation>
+    </risk>
+    <risk>
+      <description>Findings may reveal churn drivers outside the team's control (e.g., pricing, market fit) that can't be addressed with UX or product changes alone.</description>
+      <mitigation>Frame the final roadmap with tiers: changes the product team can ship independently, changes that need cross-functional buy-in, and strategic issues to escalate to leadership with supporting data.</mitigation>
+    </risk>
+  </risks>
+</research_plan>`,
+        notes: "Complex research planning with multiple constraints and realistic team dynamics.",
+      },
+    ],
+    hidden_cases: [
+      {
+        id: "hidden-1",
+        name: "Market entry feasibility study",
+        input_data: `Research question: Should our B2B invoicing software expand into the German SMB market, and if so, what localization and compliance changes are required?
+
+Constraints:
+- Timeline: 4 weeks
+- Team: 1 market researcher, 1 product manager
+- Budget: $3,000 for market data subscriptions and expert calls
+- We have no existing presence or partnerships in Germany
+- The product currently supports English and Spanish only
+
+Focus areas: Regulatory requirements (especially around e-invoicing mandates), competitive landscape, and the minimum viable localization needed for a pilot launch.`,
+        expected_output: "",
+        notes: "Tests whether the plan respects a different domain, tighter timeline, and smaller team.",
+        hidden: true,
+      },
+    ],
+    validators: [
+      {
+        kind: "xml_required_tags",
+        label: "Has required XML structure",
+        config: {
+          required_tags: ["research_plan", "goal", "steps", "step", "description", "methodology", "deliverable", "timeline", "risks", "risk", "mitigation"],
+        },
+      },
+      {
+        kind: "regex",
+        label: "At least 4 research steps",
+        config: {
+          pattern: "<step[\\s\\S]*?</step>[\\s\\S]*<step[\\s\\S]*?</step>[\\s\\S]*<step[\\s\\S]*?</step>[\\s\\S]*<step[\\s\\S]*?</step>",
+          multiline: true,
+          failure_message: "The plan should include at least 4 distinct research steps.",
+        },
+      },
+      {
+        kind: "regex",
+        label: "Methodology names concrete techniques",
+        config: {
+          pattern: "<methodology>[\\s\\S]{40,}</methodology>",
+          multiline: true,
+          failure_message: "Each methodology section should describe specific techniques, not vague directions.",
+        },
+      },
+      {
+        kind: "regex",
+        label: "At least 2 risks identified",
+        config: {
+          pattern: "<risk>[\\s\\S]*?</risk>[\\s\\S]*<risk>[\\s\\S]*?</risk>",
+          multiline: true,
+          failure_message: "Include at least 2 realistic risks with mitigations.",
+        },
+      },
+      {
+        kind: "regex",
+        label: "Timeline references step numbers",
+        config: {
+          pattern: "<phase[\\s\\S]*?step_range[\\s\\S]*?>[\\s\\S]*?</phase>",
+          multiline: true,
+          failure_message: "The timeline should reference step numbers to show how they're sequenced.",
+        },
+      },
+    ],
+    evaluator_hook: "",
+    tags: ["planning", "structured-output", "sample"],
+    created_by_user: false,
+    is_sample: true,
+  },
+];
+
 export const additionalProblemRecords = [
   {
     id: "3a7d0922",

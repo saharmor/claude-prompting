@@ -15,6 +15,7 @@ interface PracticeLibraryProblem {
   description: string;
   difficulty: PracticeDifficulty;
   tags: string[];
+  is_sample: boolean;
 }
 
 interface PracticeLibraryProps {
@@ -59,7 +60,9 @@ export function PracticeLibrary({ problems }: PracticeLibraryProps) {
 
   const groupedProblems = PRACTICE_DIFFICULTIES.map((difficulty) => ({
     difficulty,
-    problems: visibleProblems.filter((problem) => problem.difficulty === difficulty),
+    problems: visibleProblems
+      .filter((problem) => problem.difficulty === difficulty)
+      .sort((a, b) => (a.is_sample === b.is_sample ? 0 : a.is_sample ? -1 : 1)),
   })).filter((group) => group.problems.length > 0);
 
   return (
@@ -115,25 +118,39 @@ export function PracticeLibrary({ problems }: PracticeLibraryProps) {
                 <Link
                   key={problem.id}
                   href={`/practice/${problem.id}`}
-                  className="group rounded-2xl border border-border bg-card p-5 shadow-sm transition-colors hover:border-primary/35 hover:bg-accent/30"
+                  className={`group rounded-2xl border p-5 shadow-sm transition-colors hover:border-primary/35 hover:bg-accent/30 ${
+                    problem.is_sample
+                      ? "border-amber-500/30 bg-amber-500/5"
+                      : "border-border bg-card"
+                  }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center justify-between gap-3">
                     <h3 className="text-lg font-semibold text-foreground transition-colors group-hover:text-primary">
                       {problem.title}
                     </h3>
-                    <Badge
-                      variant="outline"
-                      className={difficultyMeta[problem.difficulty].badgeClassName}
-                    >
-                      {difficultyMeta[problem.difficulty].label}
-                    </Badge>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {problem.is_sample ? (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                        >
+                          Sample
+                        </Badge>
+                      ) : null}
+                      <Badge
+                        variant="outline"
+                        className={difficultyMeta[problem.difficulty].badgeClassName}
+                      >
+                        {difficultyMeta[problem.difficulty].label}
+                      </Badge>
+                    </div>
                   </div>
                   <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                     {problem.description}
                   </p>
                   {problem.tags.length > 0 ? (
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {problem.tags.map((tag) => (
+                      {problem.tags.filter((tag) => tag !== "sample").map((tag) => (
                         <span
                           key={tag}
                           className="rounded-full border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground"

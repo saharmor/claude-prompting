@@ -63,7 +63,10 @@ function mergeSeedProblems(existingProblems: Problem[]) {
       return problem;
     }
 
-    if (problem.difficulty === seedProblem.difficulty) {
+    const needsDifficultySync = problem.difficulty !== seedProblem.difficulty;
+    const needsSampleSync = problem.is_sample !== seedProblem.is_sample;
+
+    if (!needsDifficultySync && !needsSampleSync) {
       return problem;
     }
 
@@ -71,6 +74,7 @@ function mergeSeedProblems(existingProblems: Problem[]) {
     return {
       ...problem,
       difficulty: seedProblem.difficulty,
+      is_sample: seedProblem.is_sample,
     };
   });
 

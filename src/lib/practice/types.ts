@@ -39,6 +39,7 @@ export interface Problem {
   evaluator_hook: string;
   tags: string[];
   created_by_user: boolean;
+  is_sample: boolean;
 }
 
 export interface EvaluationResult {

@@ -18,6 +18,7 @@ export default function PracticePage() {
     description: problem.description,
     difficulty: problem.difficulty,
     tags: problem.tags,
+    is_sample: problem.is_sample,
   }));
 
   return (

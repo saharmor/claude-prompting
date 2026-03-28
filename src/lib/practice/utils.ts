@@ -229,6 +229,7 @@ export function hydrateProblem(value: unknown): Problem {
           .filter(Boolean)
       : [],
     created_by_user: Boolean(record.created_by_user),
+    is_sample: Boolean(record.is_sample),
   };
 }
 

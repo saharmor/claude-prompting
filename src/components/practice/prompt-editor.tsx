@@ -23,6 +23,9 @@ export function PromptEditor({
 }: PromptEditorProps) {
   const [editorTheme, setEditorTheme] = useState("vs");
   const [editorValue, setEditorValue] = useState(currentDraft);
+  const [sampleBannerDismissed, setSampleBannerDismissed] = useState(false);
+  const showSampleBanner =
+    currentProblem.is_sample && !!editorValue && !sampleBannerDismissed;
 
   useEffect(() => {
     const root = document.documentElement;
@@ -87,6 +90,22 @@ export function PromptEditor({
       </div>
 
       <div className="flex flex-1 flex-col p-5">
+        {showSampleBanner ? (
+          <div className="mb-3 flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+            <p className="text-sm text-amber-700 dark:text-amber-300">
+              This is a sample exercise with a pre-written prompt. Press{" "}
+              <strong>Run prompt</strong> below to see how evaluation works!
+            </p>
+            <button
+              type="button"
+              onClick={() => setSampleBannerDismissed(true)}
+              className="ml-4 shrink-0 text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200"
+              aria-label="Dismiss sample banner"
+            >
+              &times;
+            </button>
+          </div>
+        ) : null}
         <div className="relative h-[38rem] overflow-hidden rounded-2xl border border-border bg-background">
           {!editorValue ? (
             <div className="pointer-events-none absolute left-[62px] top-4 z-10 select-none text-sm leading-relaxed text-muted-foreground/50">
