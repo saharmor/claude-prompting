@@ -38,24 +38,33 @@ function jsonSchemaValidator(
         label: validator.label,
         passed: true,
         details: "Output matches the JSON schema.",
+        issues: [],
         kind: "json_schema",
       };
     }
 
+    const schemaIssues = (validate.errors ?? []).map(
+      (err) => `${err.instancePath || "root"}: ${err.message ?? "invalid"}`
+    );
+
     return {
       label: validator.label,
       passed: false,
-      details: `Schema validation failed: ${ajv.errorsText(validate.errors)}`,
+      details: schemaIssues.join("; "),
+      issues: schemaIssues,
       kind: "json_schema",
     };
   } catch (error) {
+    const message =
+      error instanceof Error
+        ? `Output is not valid JSON: ${error.message}`
+        : "Output is not valid JSON.";
+
     return {
       label: validator.label,
       passed: false,
-      details:
-        error instanceof Error
-          ? `Output is not valid JSON: ${error.message}`
-          : "Output is not valid JSON.",
+      details: message,
+      issues: [message],
       kind: "json_schema",
     };
   }
@@ -74,6 +83,7 @@ function regexValidator(
       label: validator.label,
       passed: false,
       details: "Pattern is too large to evaluate safely.",
+      issues: ["Pattern is too large to evaluate safely."],
       kind: "regex",
     };
   }
@@ -82,29 +92,35 @@ function regexValidator(
   try {
     regex = new RegExp(pattern, multiline ? "m" : "");
   } catch (error) {
+    const message =
+      error instanceof Error
+        ? `Invalid regex pattern: ${error.message}`
+        : "Invalid regex pattern.";
+
     return {
       label: validator.label,
       passed: false,
-      details:
-        error instanceof Error
-          ? `Invalid regex pattern: ${error.message}`
-          : "Invalid regex pattern.",
+      details: message,
+      issues: [message],
       kind: "regex",
     };
   }
 
   const passed = regex.test(outputText.slice(0, MAX_REGEX_TEXT_LENGTH));
 
+  const detail = passed
+    ? typeof validator.config.success_message === "string"
+      ? validator.config.success_message
+      : "Pattern matched."
+    : typeof validator.config.failure_message === "string"
+      ? validator.config.failure_message
+      : `Pattern did not match: ${pattern}`;
+
   return {
     label: validator.label,
     passed,
-    details: passed
-      ? typeof validator.config.success_message === "string"
-        ? validator.config.success_message
-        : "Pattern matched."
-      : typeof validator.config.failure_message === "string"
-        ? validator.config.failure_message
-        : `Pattern did not match: ${pattern}`,
+    details: detail,
+    issues: passed ? [] : [detail],
     kind: "regex",
   };
 }
@@ -124,13 +140,15 @@ function xmlRequiredTagsValidator(
   const requiredTags = asStringArray(validator.config.required_tags);
   const missing = requiredTags.filter((tag) => !hasXmlTag(outputText, tag));
 
+  const tagIssues = missing.map((tag) => `Missing required tag: <${tag}>`);
+
   return {
     label: validator.label,
     passed: missing.length === 0,
-    details:
-      missing.length === 0
-        ? "All required XML tags are present."
-        : `Missing required tags: ${missing.join(", ")}`,
+    details: missing.length === 0
+      ? "All required XML tags are present."
+      : tagIssues.join("; "),
+    issues: tagIssues,
     kind: "xml_required_tags",
   };
 }
@@ -142,13 +160,15 @@ function containsAllValidator(
   const phrases = asStringArray(validator.config.phrases);
   const missing = phrases.filter((phrase) => !outputText.includes(phrase));
 
+  const phraseIssues = missing.map((phrase) => `Missing required phrase: "${phrase}"`);
+
   return {
     label: validator.label,
     passed: missing.length === 0,
-    details:
-      missing.length === 0
-        ? "All required phrases are present."
-        : `Missing phrases: ${missing.join(", ")}`,
+    details: missing.length === 0
+      ? "All required phrases are present."
+      : phraseIssues.join("; "),
+    issues: phraseIssues,
     kind: "contains_all",
   };
 }
@@ -237,10 +257,10 @@ function clientEmailHook(outputText: string, testCase: TestCase): EvaluationResu
   return {
     label: "Client email quality",
     passed: issues.length === 0,
-    details:
-      issues.length === 0
-        ? "Good structure, no jargon leakage, concerns addressed, next step included."
-        : issues.join(" | "),
+    details: issues.length === 0
+      ? "Good structure, no jargon leakage, concerns addressed, next step included."
+      : issues.join("; "),
+    issues,
     kind: "hook",
   };
 }
@@ -256,6 +276,7 @@ function dataExtractionHook(outputText: string): EvaluationResult {
       label: "Data extraction quality",
       passed: false,
       details: "Output is not valid JSON.",
+      issues: ["Output is not valid JSON."],
       kind: "hook",
     };
   }
@@ -265,6 +286,7 @@ function dataExtractionHook(outputText: string): EvaluationResult {
       label: "Data extraction quality",
       passed: false,
       details: "Expected a JSON object at the top level.",
+      issues: ["Expected a JSON object at the top level."],
       kind: "hook",
     };
   }
@@ -309,10 +331,10 @@ function dataExtractionHook(outputText: string): EvaluationResult {
   return {
     label: "Data extraction quality",
     passed: issues.length === 0,
-    details:
-      issues.length === 0
-        ? "JSON has all required fields, line items are well-structured."
-        : issues.slice(0, 4).join(" | "),
+    details: issues.length === 0
+      ? "JSON has all required fields, line items are well-structured."
+      : issues.join("; "),
+    issues,
     kind: "hook",
   };
 }
@@ -359,10 +381,10 @@ function structuredReasoningHook(
   return {
     label: "Reasoning quality",
     passed: issues.length === 0,
-    details:
-      issues.length === 0
-        ? "Evidence is grounded in input, reasoning has substance, root cause is specific."
-        : issues.join(" | "),
+    details: issues.length === 0
+      ? "Evidence is grounded in input, reasoning has substance, root cause is specific."
+      : issues.join("; "),
+    issues,
     kind: "hook",
   };
 }
@@ -412,10 +434,10 @@ function toolPlanHook(outputText: string): EvaluationResult {
   return {
     label: "Tool simulation quality",
     passed: issues.length === 0,
-    details:
-      issues.length === 0
-        ? "Includes plan, valid tool from catalog, parseable JSON arguments, and final answer."
-        : issues.join(" | "),
+    details: issues.length === 0
+      ? "Includes plan, valid tool from catalog, parseable JSON arguments, and final answer."
+      : issues.join("; "),
+    issues,
     kind: "hook",
   };
 }
@@ -449,6 +471,7 @@ export function evaluateOutput(
         label: validator.label,
         passed: false,
         details: `Unknown validator kind: ${validator.kind}`,
+        issues: [`Unknown validator kind: ${validator.kind}`],
         kind: validator.kind,
       });
       continue;
@@ -465,6 +488,7 @@ export function evaluateOutput(
         label: "Custom Hook",
         passed: false,
         details: `Unknown evaluator hook: ${problem.evaluator_hook}`,
+        issues: [`Unknown evaluator hook: ${problem.evaluator_hook}`],
         kind: "hook",
       });
     } else {

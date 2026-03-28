@@ -1,5 +1,13 @@
 export const DEFAULT_INPUT_WRAPPER_TEMPLATE = "\n\n<input>\n{input}\n</input>";
 
+export const PRACTICE_DIFFICULTIES = [
+  "beginner",
+  "intermediate",
+  "advanced",
+] as const;
+
+export type PracticeDifficulty = (typeof PRACTICE_DIFFICULTIES)[number];
+
 export interface TestCase {
   id: string;
   name: string;
@@ -18,6 +26,7 @@ export interface ValidatorConfig {
 export interface Problem {
   id: string;
   title: string;
+  difficulty: PracticeDifficulty;
   description: string;
   input_format: string;
   evaluator_expectation: string;
@@ -36,6 +45,7 @@ export interface EvaluationResult {
   label: string;
   passed: boolean;
   details: string;
+  issues: string[];
   kind: string;
 }
 
@@ -69,30 +79,6 @@ export interface RunResult {
   cache_creation_input_tokens?: number | null;
   cache_read_input_tokens?: number | null;
 }
-
-export interface ExamState {
-  active: boolean;
-  paused: boolean;
-  duration_minutes: number;
-  problem_ids: string[];
-  selected_problem_id: string;
-  started_at: string;
-  paused_at: string;
-  total_paused_seconds: number;
-  last_autosave_at: string;
-}
-
-export const DEFAULT_EXAM_STATE: ExamState = {
-  active: false,
-  paused: false,
-  duration_minutes: 55,
-  problem_ids: [],
-  selected_problem_id: "",
-  started_at: "",
-  paused_at: "",
-  total_paused_seconds: 0,
-  last_autosave_at: "",
-};
 
 export interface PracticeConfig {
   hasAnthropicKey: boolean;

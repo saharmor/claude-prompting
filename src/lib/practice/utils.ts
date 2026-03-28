@@ -1,9 +1,9 @@
 import {
-  DEFAULT_EXAM_STATE,
   DEFAULT_INPUT_WRAPPER_TEMPLATE,
   type EvaluationResult,
-  type ExamState,
   type Problem,
+  PRACTICE_DIFFICULTIES,
+  type PracticeDifficulty,
   type RunResult,
   type TestCase,
   type ValidatorConfig,
@@ -37,6 +37,18 @@ export function normalizeInputVariableName(value: unknown): string {
   }
 
   return cleaned;
+}
+
+export function normalizePracticeDifficulty(value: unknown): PracticeDifficulty {
+  const normalized = String(value ?? "").trim().toLowerCase();
+
+  if (
+    PRACTICE_DIFFICULTIES.includes(normalized as PracticeDifficulty)
+  ) {
+    return normalized as PracticeDifficulty;
+  }
+
+  return "intermediate";
 }
 
 export function buildInputPlaceholder(inputVariableName: string) {
@@ -154,30 +166,6 @@ export function formatTimestamp(value: string) {
   });
 }
 
-export function formatDuration(secondsRemaining: number) {
-  const safe = Math.max(Math.floor(secondsRemaining), 0);
-  const hours = String(Math.floor(safe / 3600)).padStart(2, "0");
-  const minutes = String(Math.floor((safe % 3600) / 60)).padStart(2, "0");
-  const seconds = String(safe % 60).padStart(2, "0");
-  return `${hours}:${minutes}:${seconds}`;
-}
-
-export function computeRemainingSeconds(examState: ExamState) {
-  if (!examState.active || !examState.started_at) {
-    return examState.duration_minutes * 60;
-  }
-
-  const startedAt = new Date(examState.started_at).getTime();
-  const elapsedSeconds = (Date.now() - startedAt) / 1000;
-  let pausedSeconds = examState.total_paused_seconds || 0;
-
-  if (examState.paused && examState.paused_at) {
-    pausedSeconds += (Date.now() - new Date(examState.paused_at).getTime()) / 1000;
-  }
-
-  return examState.duration_minutes * 60 - Math.max(elapsedSeconds - pausedSeconds, 0);
-}
-
 function toRecord(value: unknown): Record<string, unknown> {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     return value as Record<string, unknown>;
@@ -215,6 +203,7 @@ export function hydrateProblem(value: unknown): Problem {
   return {
     id: String(record.id ?? ""),
     title: String(record.title ?? "Untitled problem"),
+    difficulty: normalizePracticeDifficulty(record.difficulty),
     description: String(record.description ?? ""),
     input_format: String(record.input_format ?? ""),
     evaluator_expectation: String(record.evaluator_expectation ?? ""),
@@ -250,6 +239,9 @@ export function hydrateEvaluationResult(value: unknown): EvaluationResult {
     label: String(record.label ?? ""),
     passed: Boolean(record.passed),
     details: String(record.details ?? ""),
+    issues: Array.isArray(record.issues)
+      ? record.issues.filter((item): item is string => typeof item === "string")
+      : [],
     kind: String(record.kind ?? ""),
   };
 }
@@ -304,20 +296,3 @@ export function hydrateRunResult(value: unknown): RunResult {
   };
 }
 
-export function hydrateExamState(value: unknown): ExamState {
-  const record = toRecord(value);
-
-  return {
-    active: Boolean(record.active),
-    paused: Boolean(record.paused),
-    duration_minutes: Number(record.duration_minutes ?? DEFAULT_EXAM_STATE.duration_minutes),
-    problem_ids: Array.isArray(record.problem_ids)
-      ? record.problem_ids.filter((item): item is string => typeof item === "string")
-      : [],
-    selected_problem_id: String(record.selected_problem_id ?? ""),
-    started_at: String(record.started_at ?? ""),
-    paused_at: String(record.paused_at ?? ""),
-    total_paused_seconds: Number(record.total_paused_seconds ?? 0),
-    last_autosave_at: String(record.last_autosave_at ?? ""),
-  };
-}
