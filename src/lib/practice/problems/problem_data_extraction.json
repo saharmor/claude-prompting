@@ -1,5 +1,5 @@
 {
-  "id": "problem-data-extraction",
+  "id": "329b3272",
   "title": "Structured Data Extraction",
   "description": "You are writing the full prompt for a model that receives messy vendor invoice text. The model must extract the important fields into a strict JSON object. The hidden evaluator cares about schema compliance, normalized values, and whether missing fields are represented consistently rather than hallucinated.",
   "input_format": "The input is raw OCR-like invoice text. Values may appear out of order, contain noise, or include multiple line items.",
@@ -13,6 +13,20 @@
       "input_data": "Invoice 8891\nVendor: Northwind Office Supply\nDate: 2026-02-17\nCurrency USD\n3 x Ergonomic Chair @ 145.00 = 435.00\n1 x Standing Desk @ 399.00 = 399.00\nTotal Due: 834.00",
       "expected_output": "{\n  \"invoice_id\": \"8891\",\n  \"vendor_name\": \"Northwind Office Supply\",\n  \"invoice_date\": \"2026-02-17\",\n  \"currency\": \"USD\",\n  \"total_amount\": 834.0,\n  \"line_items\": [\n    {\n      \"description\": \"Ergonomic Chair\",\n      \"quantity\": 3,\n      \"unit_price\": 145.0,\n      \"amount\": 435.0\n    },\n    {\n      \"description\": \"Standing Desk\",\n      \"quantity\": 1,\n      \"unit_price\": 399.0,\n      \"amount\": 399.0\n    }\n  ]\n}",
       "notes": "Baseline visible case."
+    },
+    {
+      "id": "visible-2",
+      "name": "Multi-currency invoice with tax and discount",
+      "input_data": "INVOICE\n========================================\nInvoice No: INV-2026-03741\nIssued: March 12, 2026\nVendor: CloudBridge Solutions GmbH\nBilling Currency: EUR\n\nLine Items:\n  1) Annual Platform License (Enterprise)  ×1   €24,000.00\n  2) Priority Support Add-on               ×1    €4,800.00\n  3) Data Migration Service (one-time)     ×1    €3,200.00\n  4) Additional Storage - 500GB block      ×2      €750.00 each = €1,500.00\n\nSubtotal:                €33,500.00\nVolume Discount (8%):    -€2,680.00\nNet Amount:              €30,820.00\nVAT (19% DE):             €5,855.80\n========================================\nTotal Due:               €36,675.80\nPayment Terms: Net 45\nPO Reference: PO-9982-EU",
+      "expected_output": "{\n  \"invoice_id\": \"INV-2026-03741\",\n  \"vendor_name\": \"CloudBridge Solutions GmbH\",\n  \"invoice_date\": \"2026-03-12\",\n  \"currency\": \"EUR\",\n  \"total_amount\": 36675.80,\n  \"line_items\": [\n    {\n      \"description\": \"Annual Platform License (Enterprise)\",\n      \"quantity\": 1,\n      \"unit_price\": 24000.00,\n      \"amount\": 24000.00\n    },\n    {\n      \"description\": \"Priority Support Add-on\",\n      \"quantity\": 1,\n      \"unit_price\": 4800.00,\n      \"amount\": 4800.00\n    },\n    {\n      \"description\": \"Data Migration Service (one-time)\",\n      \"quantity\": 1,\n      \"unit_price\": 3200.00,\n      \"amount\": 3200.00\n    },\n    {\n      \"description\": \"Additional Storage - 500GB block\",\n      \"quantity\": 2,\n      \"unit_price\": 750.00,\n      \"amount\": 1500.00\n    }\n  ]\n}",
+      "notes": "Tests extraction with European formatting, tax, discounts, and PO reference."
+    },
+    {
+      "id": "visible-3",
+      "name": "Scanned invoice with OCR artifacts",
+      "input_data": "--- SCAN START ---\nFrorn: Matsuda Industrial Supply Co.\n237 Harbor Blvd, Ste 4\nLong Beach  CA 90802\n\nlnv #: MS-00447\nDt: 01/28/2026\n\n  Qty   Description                    Unit $    Ext\n  ----  ----------------------------   -------  ------\n  12    Hex Bolt M10x40 (Grade 8.8)      0.85    10.20\n   4    Bearing Assembly - SKF 6205      18.50    74.O0\n   1    Hydraulic Hose 3/8\" x 48\"        42.00    42.00\n  50    Flat Washer M10 Zinc              O.12     6.00\n   2    Shaft Collar 25mm Set Screw      11.25    22.50\n\n  Subtotal .....  $154.70\n  CA Sales Tax 10.25% .....  $15.86\n  Shipping & Hand1ing .....  $18.00\n  ==================\n  TOTAL DUE: $188.56\n\n  Terms: Net 30\n  Remit to acct ending 4471\n--- SCAN END ---",
+      "expected_output": "{\n  \"invoice_id\": \"MS-00447\",\n  \"vendor_name\": \"Matsuda Industrial Supply Co.\",\n  \"invoice_date\": \"2026-01-28\",\n  \"currency\": \"USD\",\n  \"total_amount\": 188.56,\n  \"line_items\": [\n    {\n      \"description\": \"Hex Bolt M10x40 (Grade 8.8)\",\n      \"quantity\": 12,\n      \"unit_price\": 0.85,\n      \"amount\": 10.20\n    },\n    {\n      \"description\": \"Bearing Assembly - SKF 6205\",\n      \"quantity\": 4,\n      \"unit_price\": 18.50,\n      \"amount\": 74.00\n    },\n    {\n      \"description\": \"Hydraulic Hose 3/8\\\" x 48\\\"\",\n      \"quantity\": 1,\n      \"unit_price\": 42.00,\n      \"amount\": 42.00\n    },\n    {\n      \"description\": \"Flat Washer M10 Zinc\",\n      \"quantity\": 50,\n      \"unit_price\": 0.12,\n      \"amount\": 6.00\n    },\n    {\n      \"description\": \"Shaft Collar 25mm Set Screw\",\n      \"quantity\": 2,\n      \"unit_price\": 11.25,\n      \"amount\": 22.50\n    }\n  ]\n}",
+      "notes": "Tests handling of OCR typos (Frorn, lnv, 74.O0, Hand1ing), scan artifacts, and tabular data."
     }
   ],
   "hidden_cases": [

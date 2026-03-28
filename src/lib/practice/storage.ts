@@ -52,6 +52,41 @@ async function writeJsonFile(filePath: string, value: unknown) {
   await rename(tempPath, filePath);
 }
 
+function mergeSeedProblems(existingProblems: Problem[]) {
+  const seedProblems = getSeedProblems();
+  const seedById = new Map(seedProblems.map((problem) => [problem.id, problem]));
+  let changed = false;
+
+  const mergedProblems = existingProblems.map((problem) => {
+    const seedProblem = seedById.get(problem.id);
+    if (!seedProblem) {
+      return problem;
+    }
+
+    if (problem.difficulty === seedProblem.difficulty) {
+      return problem;
+    }
+
+    changed = true;
+    return {
+      ...problem,
+      difficulty: seedProblem.difficulty,
+    };
+  });
+
+  const existingIds = new Set(mergedProblems.map((problem) => problem.id));
+  for (const seedProblem of seedProblems) {
+    if (existingIds.has(seedProblem.id)) {
+      continue;
+    }
+
+    mergedProblems.push(seedProblem);
+    changed = true;
+  }
+
+  return { changed, problems: mergedProblems };
+}
+
 export async function loadProblems(): Promise<Problem[]> {
   await ensureDataRoot();
   const raw = await readJsonFile<unknown>(problemsPath);
@@ -66,7 +101,12 @@ export async function loadProblems(): Promise<Problem[]> {
     throw jsonError(problemsPath, "Expected an array of problems.");
   }
 
-  return raw.value.map((problem) => hydrateProblem(problem));
+  const merged = mergeSeedProblems(raw.value.map((problem) => hydrateProblem(problem)));
+  if (merged.changed) {
+    await saveProblems(merged.problems);
+  }
+
+  return merged.problems;
 }
 
 export async function saveProblems(problems: Problem[]) {

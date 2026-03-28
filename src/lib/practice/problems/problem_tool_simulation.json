@@ -1,5 +1,5 @@
 {
-  "id": "problem-tool-simulation",
+  "id": "6365b238",
   "title": "Agent Tool-Calling Simulation",
   "description": "Create a prompt that turns the model into a lightweight planning agent. The model will receive a user request plus a small tool catalog and should decide what tool call to make before returning a final answer. This mirrors interview questions where structure, explicit planning, and clean tool arguments matter more than writing code.",
   "input_format": "The input includes a user request and a fixed tool catalog. The model should not invent tools that are not in the catalog.",
@@ -13,6 +13,20 @@
       "input_data": "User request: Please log a high-priority ticket for our finance team because month-end exports are failing for EU accounts.",
       "expected_output": "<plan>\nUse the ticket tool because the user explicitly wants an issue logged.\n</plan>\n<tool_call>\n  <name>create_ticket</name>\n  <arguments>{\"title\": \"Month-end exports failing for EU accounts\", \"description\": \"Finance team reports failed month-end exports for EU accounts.\", \"priority\": \"high\"}</arguments>\n</tool_call>\n<final_answer>\nI would create a high-priority ticket for the finance team and include the export failure details.\n</final_answer>",
       "notes": "Visible tool choice case."
+    },
+    {
+      "id": "visible-2",
+      "name": "Internal documentation lookup",
+      "input_data": "User request: A new engineer on my team is setting up their local development environment and keeps getting a 401 error when calling the partner API sandbox. I remember we had a wiki page about configuring sandbox API credentials, but I can't find it. Can you look it up for me?",
+      "expected_output": "<plan>\nThe user needs to find an existing internal document about sandbox API credential configuration. This is a knowledge retrieval task, so search_docs is the appropriate tool. The query should target sandbox API setup or credential configuration to surface the relevant wiki page.\n</plan>\n<tool_call>\n  <name>search_docs</name>\n  <arguments>{\"query\": \"partner API sandbox credentials setup local development 401\"}</arguments>\n</tool_call>\n<final_answer>\nI would search the internal documentation for the partner API sandbox credential setup guide. The 401 error likely means the new engineer needs specific sandbox API keys or authentication tokens described in that wiki page.\n</final_answer>",
+      "notes": "Tests search_docs selection with a realistic onboarding scenario."
+    },
+    {
+      "id": "visible-3",
+      "name": "Cross-team meeting coordination",
+      "input_data": "User request: We need to get the platform infrastructure team and the data engineering team together to discuss the upcoming Kafka cluster migration. It's time-sensitive — we're targeting next Wednesday at 3pm ET so we can finalize the cutover plan before the weekend freeze. The key people are Jordan Park from platform-infra and Aisha Chen from data-eng. Please set this up.",
+      "expected_output": "<plan>\nThe user is requesting a specific meeting with named attendees, a defined topic, and an exact time. This maps directly to the schedule_meeting tool. The title should capture the purpose (Kafka migration cutover planning), the attendees are Jordan Park and Aisha Chen, and the time is next Wednesday at 3pm ET.\n</plan>\n<tool_call>\n  <name>schedule_meeting</name>\n  <arguments>{\"title\": \"Kafka cluster migration cutover planning\", \"attendees\": [\"Jordan Park\", \"Aisha Chen\"], \"time\": \"next Wednesday 3:00 PM ET\"}</arguments>\n</tool_call>\n<final_answer>\nI would schedule a meeting titled \"Kafka cluster migration cutover planning\" with Jordan Park and Aisha Chen for next Wednesday at 3pm ET, so both teams can align on the cutover plan before the weekend freeze.\n</final_answer>",
+      "notes": "Tests schedule_meeting with realistic multi-team coordination context."
     }
   ],
   "hidden_cases": [

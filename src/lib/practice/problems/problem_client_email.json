@@ -1,5 +1,5 @@
 {
-  "id": "problem-client-email",
+  "id": "9821dffc",
   "title": "Client-Facing Output",
   "description": "Write the complete prompt for a model that receives technical incident details and must draft a client-ready update. The update needs to balance transparency, calm tone, and actionable next steps while avoiding internal jargon leakage.",
   "input_format": "The input includes internal incident notes, mitigation progress, and one or more client concerns.",
@@ -14,6 +14,20 @@
       "input_data": "Internal notes:\n- ingestion lag peaked at 42 minutes after a misconfigured worker deploy\n- rollback completed\n- backfill is 75% complete\nClient concerns:\n- dashboard data is stale\n- asks whether data loss occurred\n- asks when numbers will be current again",
       "expected_output": "<subject>Update on dashboard data delay</subject>\n<body>\nThank you for flagging the dashboard delay. We identified the issue, rolled back the change that caused it, and are actively completing the backlog. There is no indication of data loss.\n\nWe expect dashboards to return to current data shortly, and we will send another update once backfill is complete. Our next step is to confirm that all delayed records have been processed successfully.\n</body>",
       "notes": "Visible client communication case."
+    },
+    {
+      "id": "visible-2",
+      "name": "Payment processing delays for merchants",
+      "input_data": "Internal notes:\n- payment gateway partner experienced a certificate expiry at 14:22 UTC\n- outbound settlement batch was queued but not transmitted for 3 hours 17 minutes\n- engineering rerouted traffic to the backup gateway at 17:39 UTC\n- all queued settlements are now processing; expected to clear within 90 minutes\n- no funds were lost; merchant balances will reconcile once the batch completes\n- root cause was a missed renewal on the partner's TLS certificate (not our infra)\nClient concerns:\n- merchants are asking why payouts haven't arrived\n- wants to know if any transactions were dropped or duplicated\n- asks whether they need to resubmit any batches manually\n- wants an ETA for when merchant balances will show correctly in the portal",
+      "expected_output": "<subject>Update on delayed merchant payouts</subject>\n<body>\nThank you for reaching out about the payout delays. A temporary connectivity issue with one of our processing partners caused outbound settlements to queue for approximately three hours this afternoon.\n\nImportant details:\n- No transactions were dropped or duplicated. All queued settlements are now processing and should clear within the next 90 minutes.\n- Merchant balances in the portal will update automatically once processing completes. No manual resubmission is needed on your side.\n\nWe will send a follow-up confirmation once all balances are fully reconciled. Please don't hesitate to reach out if you have additional questions in the meantime.\n</body>",
+      "notes": "Tests handling of financial-context incidents with multiple specific concerns."
+    },
+    {
+      "id": "visible-3",
+      "name": "Scheduled maintenance caused extended downtime",
+      "input_data": "Internal notes:\n- planned 30-minute maintenance window for database cluster upgrade started at 02:00 UTC Saturday\n- migration step 4 of 6 failed due to an incompatible index on the audit_logs table (278M rows)\n- team had to rebuild the index before retrying, extending downtime to 2 hours 45 minutes\n- full service restored at 04:45 UTC\n- during downtime, API returned 503 errors; webhook deliveries were paused and will retry automatically\n- no data was lost; all pending writes were journaled and replayed on recovery\n- post-maintenance performance is actually 15% faster on read queries\nClient concerns:\n- their monitoring triggered dozens of alerts during the window and the CEO saw them\n- asks why the maintenance took so much longer than the 30 minutes communicated beforehand\n- wants to know if any webhooks were permanently lost\n- requests advance notice with realistic time estimates for future maintenance windows",
+      "expected_output": "<subject>Post-maintenance update — extended window and webhook delivery</subject>\n<body>\nThank you for your patience during this weekend's maintenance. We want to address your concerns directly.\n\nThe scheduled 30-minute window extended to approximately 2 hours and 45 minutes because a database optimization step required additional processing time that our pre-maintenance testing did not fully account for. We understand this caused unnecessary alerts on your end, and we apologize for the disruption.\n\nKey points:\n- No webhooks were permanently lost. All paused deliveries are retrying automatically and should complete shortly.\n- No data was lost during the extended window.\n\nFor future maintenance, we are updating our estimation process to include more conservative time buffers, and we will provide advance notice with realistic worst-case windows. Our next step is to send you a brief post-maintenance summary once all webhook retries have completed.\n</body>",
+      "notes": "Tests handling of maintenance overrun with executive visibility and forward-looking commitments."
     }
   ],
   "hidden_cases": [
