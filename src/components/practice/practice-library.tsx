@@ -67,15 +67,11 @@ export function PracticeLibrary({ problems }: PracticeLibraryProps) {
 
   return (
     <div className="space-y-8">
-      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Practice
-          </h1>
-          <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Open-ended prompt exercises with realistic inputs and hidden checks.
-          </p>
-        </div>
+      <div className="mb-2">
+        <h1 className="text-3xl font-bold">Practice</h1>
+        <p className="mt-2 text-muted-foreground">
+          Open-ended prompt exercises with realistic inputs and hidden checks.
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-2">

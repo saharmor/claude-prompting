@@ -69,7 +69,7 @@ export function RunPanel({
     <section className="relative rounded-3xl border border-border bg-card shadow-sm">
       <div className="max-h-[42rem] overflow-y-auto xl:max-h-[calc(100vh-8rem)]">
         <div className="flex flex-col gap-5 p-6">
-          <div className="space-y-1 rounded-2xl border border-border bg-muted/30 p-4">
+          <div className="space-y-1">
             <p className="text-sm font-medium text-foreground">Review</p>
             <p className="text-sm text-muted-foreground">
               Inspect the evaluation, the generated output, and the submission
@@ -134,7 +134,7 @@ export function RunPanel({
                           <p className="text-foreground">{item.details}</p>
                         )}
                         {hints[checkKey] ? (
-                          <div className="rounded-lg border border-border bg-background px-3 py-3 text-muted-foreground">
+                          <div className="text-muted-foreground">
                             <div className="mb-1 text-xs font-medium uppercase tracking-wide text-foreground">
                               Coaching hint
                             </div>

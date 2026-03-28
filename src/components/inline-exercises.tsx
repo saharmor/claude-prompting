@@ -154,7 +154,7 @@ export function InlineExercises({
                     {exercise.description}
                   </p>
 
-                  <div className="rounded-lg border border-border bg-muted/30 p-4 mb-5">
+                  <div className="mb-5">
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
                       Your Task
                     </h4>

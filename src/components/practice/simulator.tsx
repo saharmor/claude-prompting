@@ -27,6 +27,8 @@ import type {
 } from "@/lib/practice/types";
 import {
   buildInputPlaceholder,
+  buildRuntimePrompt,
+  formatOutputText,
   isoNow,
   replaceInputVariable,
 } from "@/lib/practice/utils";
@@ -88,6 +90,49 @@ function normalizeDraftsForProblems(
       ];
     })
   );
+}
+
+function buildMockRunResult(
+  problem: Problem,
+  promptMarkdown: string,
+  inputData: string,
+  caseId: string
+): RunResult {
+  const visibleCase = problem.sample_cases[0];
+  const mockOutput = visibleCase?.expected_output ?? "";
+  const evaluation: EvaluationResult[] = problem.validators.map((v) => ({
+    label: v.label,
+    passed: true,
+    details: "",
+    issues: [],
+    kind: v.kind,
+  }));
+  const hiddenSuite: HiddenSuiteResult[] = problem.hidden_cases.map((hc) => ({
+    case_id: hc.id,
+    name: hc.name,
+    passed: true,
+    error: "",
+    evaluation: [],
+  }));
+
+  return {
+    run_id: `mock-${Date.now()}`,
+    created_at: new Date().toISOString(),
+    problem_id: problem.id,
+    problem_title: problem.title,
+    provider: "anthropic",
+    model_name: "demo (sample exercise)",
+    prompt_markdown: promptMarkdown,
+    runtime_prompt: buildRuntimePrompt(problem, promptMarkdown, inputData),
+    input_data: inputData,
+    case_id: caseId,
+    output_text: mockOutput,
+    formatted_output: formatOutputText(mockOutput),
+    duration_seconds: 8,
+    evaluation,
+    hidden_suite: hiddenSuite,
+    error: "",
+  };
 }
 
 function resolvePracticeModel(availableModels: string[]) {
@@ -264,16 +309,21 @@ export function Simulator({ initialProblemId }: { initialProblemId: string }) {
       return;
     }
 
-    if (!anthropicModel) {
-      setError("Choose a Claude model before running.");
-      return;
-    }
+    const hasApiKey = Boolean(anthropicApiKey.trim() || config.hasAnthropicKey);
+    const isSampleDemo = currentProblem.is_sample && !hasApiKey;
 
-    if (!anthropicApiKey.trim() && !config.hasAnthropicKey) {
-      setPendingActionAfterSettings("run");
-      setError("no-api-key");
-      setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
-      return;
+    if (!isSampleDemo) {
+      if (!anthropicModel) {
+        setError("Choose a Claude model before running.");
+        return;
+      }
+
+      if (!hasApiKey) {
+        setPendingActionAfterSettings("run");
+        setError("no-api-key");
+        setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
+        return;
+      }
     }
 
     const requestProblemId = currentProblem.id;
@@ -286,6 +336,43 @@ export function Simulator({ initialProblemId }: { initialProblemId: string }) {
     setRunState((previous) => ({ ...previous, running: true, error: "" }));
     setHints({});
     setHintLoading({});
+
+    if (isSampleDemo) {
+      await new Promise((resolve) => setTimeout(resolve, 8000));
+
+      if (
+        runRequestIdRef.current !== requestId ||
+        activeProblemIdRef.current !== requestProblemId
+      ) {
+        return;
+      }
+
+      const run = buildMockRunResult(
+        currentProblem,
+        requestPrompt,
+        currentInput,
+        currentCase?.id ?? ""
+      );
+
+      setRunState({
+        running: false,
+        rawOutput: run.output_text,
+        formattedOutput: run.formatted_output,
+        evaluation: run.evaluation,
+        hiddenSuite: run.hidden_suite,
+        error: "",
+      });
+      setRuns((previous) => [run, ...previous].slice(0, 20));
+      setError("");
+
+      confetti({ particleCount: 100, angle: 60, spread: 55, origin: { x: 0, y: 0.65 } });
+      confetti({ particleCount: 100, angle: 120, spread: 55, origin: { x: 1, y: 0.65 } });
+      setTimeout(() => {
+        confetti({ particleCount: 200, spread: 120, startVelocity: 45, origin: { y: 0.3 } });
+      }, 250);
+
+      return;
+    }
 
     try {
       const payload = await fetchJson<{ run: RunResult }>("/api/practice/run", {
@@ -321,21 +408,18 @@ export function Simulator({ initialProblemId }: { initialProblemId: string }) {
       setError("");
 
       if (!run.error && isCompletedRun(run)) {
-        // Left burst
         confetti({
           particleCount: 100,
           angle: 60,
           spread: 55,
           origin: { x: 0, y: 0.65 },
         });
-        // Right burst
         confetti({
           particleCount: 100,
           angle: 120,
           spread: 55,
           origin: { x: 1, y: 0.65 },
         });
-        // Center shower
         setTimeout(() => {
           confetti({
             particleCount: 200,
@@ -682,7 +766,7 @@ export function Simulator({ initialProblemId }: { initialProblemId: string }) {
             onRun={handleRun}
           />
         </div>
-        <div className="xl:sticky xl:top-20">
+        <div className={`xl:sticky xl:top-20 ${runState.running || runState.rawOutput || runState.evaluation.length > 0 || runState.error ? "" : "hidden xl:block"}`}>
           <RunPanel
             currentProblem={currentProblem}
             currentDraft={currentDraft}

@@ -145,7 +145,7 @@ export function PromptEditor({
 
         <div className="mt-3 flex items-center justify-end gap-3">
           <Button onClick={onRun}>Run prompt</Button>
-          <span className="text-xs text-muted-foreground/60">
+          <span className="hidden text-xs text-muted-foreground/60 sm:inline">
             or press Cmd/Ctrl + Enter
           </span>
         </div>
