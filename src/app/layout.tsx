@@ -204,7 +204,7 @@ export default function RootLayout({
                 >
                   {siteAuthor}
                 </a>
-                .{" "}
+                .{" "}Open source on{" "}
                 <a
                   href="https://github.com/saharmor/prompt-claude"
                   target="_blank"
@@ -212,7 +212,7 @@ export default function RootLayout({
                   aria-label="Prompt Claude source code on GitHub (opens in a new tab)"
                   className="underline underline-offset-2 transition-colors hover:text-foreground"
                 >
-                  Open source on GitHub
+                  GitHub
                 </a>
                 .
               </p>
