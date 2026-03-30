@@ -70,7 +70,7 @@ const footerSections = [
         external: true,
       },
       {
-        href: "https://github.com/saharmor/EchoScribe",
+        href: "https://saharmor.me/EchoScribe/",
         label: "📝 EchoScribe",
         description: "Local AI transcription workspace with cloud or local Whisper models.",
         external: true,
